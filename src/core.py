@@ -15,7 +15,7 @@ from langchain_openai import ChatOpenAI
 from langchain_community.tools.tavily_search import TavilySearchResults
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import Runnable, RunnableConfig
-from personnalDataTool import fetch_person_data
+from tools.personnalDataTool import fetch_person_data, update_person_data
 from datetime import datetime
 
 class Assistant:
@@ -65,7 +65,8 @@ primary_assistant_prompt = ChatPromptTemplate.from_messages(
 # Define the tools with required keys
 tools = [
     TavilySearchResults(max_results=1),
-    fetch_person_data
+    fetch_person_data,
+    update_person_data
     ]
 
 assistant_runnable = primary_assistant_prompt | llm.bind_tools(tools)
