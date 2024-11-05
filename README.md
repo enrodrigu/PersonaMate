@@ -16,15 +16,21 @@ Open sourced personnal assistant based on LLM helping you with tasks and contact
 
 # Installing
 
-1. Simply put your api key in a .env file on the root of the project.
+1. Install python modules 
+
+```bash
+pip install -r requirements.txt
+```
+
+2. Simply put your api key in a .env file on the root of the project.
 
 ```env
 OPEN_API_KEY=...
 TAVILY_API_KEY=...
 ```
 
-2. Run the bash file to write the empty personal_data.json file.
+3. Run the bash file to write the empty personal_data.json file.
 
-3. Then run `python src/app.py`
+4. Then run `python src/app.py`
 
-4. Your chatbot should be available at [127.0.0.1:5000](https://127.0.0.1:5000/)
+5. Your chatbot should be available at [127.0.0.1:5000](https://127.0.0.1:5000/)
