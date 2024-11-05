@@ -1,0 +1,34 @@
+[
+    {
+      "name": "John Doe",
+      "age": 30,
+      "email": "john.doe@example.com",
+      "address": {
+        "street": "123 Main St",
+        "city": "Anytown",
+        "state": "CA",
+        "zip": "12345"
+      },
+      "likings":{
+        "food": ["Pizza", "Burger", "Pasta", "Sushi"],
+        "sports": ["hiking", "cycling"],
+        "cinema": ["action", "comedy"]
+        }
+    },
+    {
+      "name": "Jane Smith",
+      "age": 25,
+      "email": "jane.smith@example.com",
+      "address": {
+        "street": "456 Elm St",
+        "city": "Othertown",
+        "state": "NY",
+        "zip": "67890"
+      },
+      "likings":{
+        "food": ["Burger", "Ramen", "Tacos"],
+        "sports": ["hiking", "swimming"],
+        "cinema": ["romance", "comedy"]
+        }
+    }
+  ]

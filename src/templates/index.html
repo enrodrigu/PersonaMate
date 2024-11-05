@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chatbot</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        .chat-container {
+            width: 500px;
+            margin: 0 auto;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        .chat-box {
+            height: 300px;
+            overflow-y: scroll;
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+        .chat-input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        .chat-button {
+            padding: 10px 20px;
+            border: none;
+            background-color: #007bff;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <div class="chat-box" id="chat-box"></div>
+        <input type="text" id="chat-input" class="chat-input" placeholder="Type your message here...">
+        <button id="chat-button" class="chat-button">Send</button>
+    </div>
+
+    <script>
+        document.getElementById('chat-button').addEventListener('click', function() {
+            const input = document.getElementById('chat-input').value;
+            if (input.trim() === '') return;
+    
+            const chatBox = document.getElementById('chat-box');
+            chatBox.innerHTML += `<div><strong>You:</strong> ${input}</div>`;
+    
+            fetch('/chat', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ message: input })
+            })
+            .then(response => response.text())
+            .then(text => {
+                chatBox.innerHTML += `<div><strong>Assistant:</strong> ${text}</div>`;
+                chatBox.scrollTop = chatBox.scrollHeight;
+            });
+    
+            document.getElementById('chat-input').value = '';
+        });
+    </script>
+</body>
+</html>
