@@ -15,7 +15,7 @@ from langchain_openai import ChatOpenAI
 from langchain_community.tools.tavily_search import TavilySearchResults
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import Runnable, RunnableConfig
-from tools.personnalDataTool import fetch_person_data, update_person_data
+from src.tools.personalDataTool import fetch_person_data, update_person_data
 from datetime import datetime
 
 class Assistant:
