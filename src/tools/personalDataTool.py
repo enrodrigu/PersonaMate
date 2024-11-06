@@ -1,27 +1,6 @@
 import json
 from langchain_core.tools import tool
 
-class Address:
-    def __init__(self, street, city, state, zip):
-        self.street = street
-        self.city = city
-        self.state = state
-        self.zip = zip
-
-class Likings:
-    def __init__(self, food, sports, cinema):
-        self.food = food
-        self.sports = sports
-        self.cinema = cinema
-
-class Person:
-    def __init__(self, name, age, email, address, likings):
-        self.name = name
-        self.age = age
-        self.email = email
-        self.address = Address(**address)
-        self.likings = Likings(**likings)
-
 def load_person_data(file_path):
     with open(file_path, 'r') as file:
         data = json.load(file)
@@ -33,6 +12,8 @@ def fetch_person_data(name: str) -> str:
     Fetch personal information about a person regarding their name
     """
     data = load_person_data('data/personal_data.json')
+    if not data:
+        return "No data found"
     for person in data:
         if person["name"].lower() == name.lower():
             return person
