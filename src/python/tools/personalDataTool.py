@@ -26,10 +26,7 @@ def update_person_data(name: str,
                        street: str = None,
                        city: str = None,
                        state: str = None,
-                       zip: str = None,
-                       food: list = None,
-                       sports: list = None,
-                       cinema: list = None) -> str:
+                       zip: str = None) -> str:
     """
     Update personal information about a person regarding their name
 
@@ -41,9 +38,6 @@ def update_person_data(name: str,
         city (str, optional): City of the person
         state (str, optional): State of the person
         zip (str, optional): Zip code of the person
-        food (list, optional): List of favorite foods
-        sports (list, optional): List of favorite sports
-        cinema (list, optional): List of favorite cinema genres
     """
     data = load_person_data('data/personal_data.json')
     for p in data:
@@ -60,12 +54,6 @@ def update_person_data(name: str,
                 p["address"]["state"] = state
             if zip is not None:
                 p["address"]["zip"] = zip
-            if food is not None:
-                p["likings"]["food"] = food
-            if sports is not None:
-                p["likings"]["sports"] = sports
-            if cinema is not None:
-                p["likings"]["cinema"] = cinema
             with open('data/personal_data.json', 'w') as file:
                 json.dump(data, file, indent=4)
             return "Person data updated"
@@ -78,11 +66,6 @@ def update_person_data(name: str,
             "city": city,
             "state": state,
             "zip": zip
-        },
-        "likings": {
-            "food": food,
-            "sports": sports,
-            "cinema": cinema
         }
     }
     data.append(new_person)
