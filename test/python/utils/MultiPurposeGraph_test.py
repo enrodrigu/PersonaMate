@@ -9,6 +9,16 @@ from src.python.utils.MultiPurposeGraph import MultiPurposeGraph, Node
 
 class TestMultiPurposeGraph(unittest.TestCase):
 
+    #def test_load_emptyfile(self):
+    #    graph = MultiPurposeGraph.load("data/empty.pkl")
+    #    self.assertEqual(graph.nodes, [])
+    #    self.assertEqual(graph.typeOrganizedNodes, dict())
+
+    def test_load_and_use_emptyfile(self):
+        graph = MultiPurposeGraph.load("data/empty.pkl")
+        graph.get_node("Alice", "Person")
+        graph.save("data/empty.pkl")
+
     def test_add_node(self):
         graph = MultiPurposeGraph()
         node = Node(type="Person", name="Alice")
@@ -46,3 +56,4 @@ class TestMultiPurposeGraph(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+    TestMultiPurposeGraph.test_load_and_use_emptyfile()

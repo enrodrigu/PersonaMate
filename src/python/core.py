@@ -16,6 +16,7 @@ from langchain_community.tools.tavily_search import TavilySearchResults
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import Runnable, RunnableConfig
 from tools.personalDataTool import fetch_person_data, update_person_data
+from tools.linkingTool import link_elements
 from datetime import datetime
 
 class Assistant:
@@ -52,9 +53,23 @@ primary_assistant_prompt = ChatPromptTemplate.from_messages(
         (
             "system",
             "You are my personnal assistant"
-            " Use the provided tools to search for information about my contacts and search internet to help me. "
-            " When searching, be persistent. Expand your query bounds if the first search returns no results. "
-            " If a search comes up empty, expand your search before giving up."
+            "Use the provided tools to search for information about my contacts and search internet to help me."
+            "When searching, be persistent. Expand your query bounds if the first search returns no results."
+            "You can also ask for more information about someone I mention if he don't figure out in my contacts."
+            "If a search comes up empty, expand your search before giving up."
+            "Here is the list of tools you can use"
+            "1. Search for a person's data"
+            "2. Update a person's data"
+            "3. Create likings and links related to something (a person, a place, a thing)"
+            "4. Search the internet for information"
+            "Here is an example of how you can use the tools"
+            " User prompt : Where can I go eat with John Doe ?"
+            " Step by step solution :"
+            "  1. Search for John Doe's favorite food and residence"
+            "  2. Search for restaurants in residence city of John Doe that serve that food"
+            "  3. Provide the user with the list of restaurants"
+            " Assistant output : John Doe's favorite food is pizza. He lives in Montréal."
+            "  Here are some restaurants in Montréal that serve pizza: Restaurant 1, Restaurant 2, Restaurant 3."
             "If no tool is needed, respond conversationally."
             "\nCurrent time: {time}.",
         ),
@@ -66,7 +81,8 @@ primary_assistant_prompt = ChatPromptTemplate.from_messages(
 tools = [
     TavilySearchResults(max_results=1),
     fetch_person_data,
-    update_person_data
+    update_person_data,
+    link_elements
     ]
 
 assistant_runnable = primary_assistant_prompt | llm.bind_tools(tools)

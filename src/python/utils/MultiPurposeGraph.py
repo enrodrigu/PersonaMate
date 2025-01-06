@@ -1,4 +1,5 @@
 import pickle as pkl
+import os
 #for saving and loading the graph
 
 class Node:
@@ -61,7 +62,18 @@ class MultiPurposeGraph:
         with open(filename, 'wb') as file:
             pkl.dump(self, file)
 
-    @staticmethod
-    def load(filename:str):
-        with open(filename, 'rb') as file:
-            return pkl.load(file)
+    @classmethod
+    def load(cls, filepath: str):
+        if not os.path.exists(filepath):
+            # Create an empty MultiPurposeGraph and save it to the file
+            graph = cls()
+            graph.save(filepath)
+            return graph
+        try:
+            with open(filepath, 'rb') as file:
+                return pkl.load(file)
+        except (EOFError, pkl.UnpicklingError):
+            # Handle empty or corrupted file
+            graph = cls()
+            graph.save(filepath)
+            return graph
