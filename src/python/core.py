@@ -1,6 +1,16 @@
 from dotenv import load_dotenv
 load_dotenv()
 
+import logging
+
+# Configure basic logging for the backend. Applications consuming this module
+# can reconfigure logging as needed; by default we log INFO+ to stdout.
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s [%(name)s] %(message)s",
+)
+logger = logging.getLogger("personamate.core")
+
 from typing import Annotated, Tuple, Optional
 from typing_extensions import TypedDict
 from datetime import datetime
@@ -42,7 +52,12 @@ class Assistant:
         while True:
             configuration = config.get("configurable", {})
             state = {**state, **configuration}
-            result = self.runnable.invoke(state)
+            try:
+                result = self.runnable.invoke(state)
+            except Exception:
+                # Log full traceback to help debugging tool/LLM/runtime errors.
+                logger.exception("Exception while invoking runnable")
+                raise
             if not result.tool_calls and (
                 not result.content
                 or isinstance(result.content, list)
@@ -115,11 +130,19 @@ def chat_once(message: str, graph, config) -> str:
     """
     last_response = ""
     _printed = set()
-    events = graph.stream({"messages": ("user", message)}, config, stream_mode="values")
-    for event in events:
-        response = _print_event(event, _printed)
-        if response:
-            last_response = response
+    try:
+        events = graph.stream({"messages": ("user", message)}, config, stream_mode="values")
+        for event in events:
+            try:
+                response = _print_event(event, _printed)
+                if response:
+                    last_response = response
+            except Exception:
+                logger.exception("Error while processing event from graph stream")
+                # continue to collect other events if any
+                continue
+    except Exception:
+        logger.exception("Error while streaming from graph")
     return last_response
 
 
