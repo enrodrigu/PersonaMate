@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   backend:
     build: .
@@ -9,19 +7,20 @@ services:
     volumes:
       - ./src:/app/src
       - ./data:/app/src/python/data
+    env_file:
+      - .env
     environment:
       - PYTHONPATH=/app/src/python
 
   openwebui:
     # NOTE: Image name may need to be adjusted to match the OpenWebUI image you want to use.
-    image: ghcr.io/openwebui/openwebui:latest
+    image: ghcr.io/open-webui/open-webui:main
     container_name: openwebui
     ports:
       - "3000:3000"
+    env_file:
+      - .env
     environment:
-      # Many OpenWebUI deployments allow configuring backend/model hosts via env vars or UI.
-      # You can route requests from OpenWebUI to the backend service using a proxy or
-      # by configuring OpenWebUI's API URL (if available).
       - BACKEND_URL=http://backend:8000
     depends_on:
       - backend

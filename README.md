@@ -1,37 +1,72 @@
 # PersonaMate
-Open sourced personnal assistant based on LLM helping you with tasks and contact informations
+PersonaMate is a personal assistant project that uses a langgraph-based agent and LLMs to answer questions, manage personal contact data, and create relations between entities.
 
-# Current features
+This repository exposes a FastAPI backend (`src/python/app.py`) and a refactored core graph implementation (`src/python/core.py`) that provides programmatic helpers (`build_graph`, `chat_once`, and `interactive_loop`). The project includes Docker artifacts to run the backend and optionally an OpenWebUI frontend via Docker Compose.
 
-- Base LLM model interaction
-- Markdown answers formatting (no syntax highlighting yet)
-- Personal information storage system
-- Web based realtime information with the use of [Tavily](https://tavily.com/)
-- Graph based relations to manage information between people and subjects or between subjects themselves
+## Current architecture
 
-# Requirements
+- Backend: FastAPI application in `src/python/app.py` which builds the langgraph graph at startup (via `core.build_graph`) and exposes a `/chat` POST endpoint that returns JSON: `{ "response": "..." }`.
+- Core graph logic: `src/python/core.py` — contains `build_graph`, `chat_once`, and a CLI interactive loop.
+- Tools: `src/python/tools/*` (e.g. `personalDataTool.py`, `linkingTool.py`) provide tool functions used by the assistant.
+- Utilities: `src/python/utils/*` contains helpers and a small MultiPurposeGraph implementation.
+- Docker: `Dockerfile` builds the backend image; `docker-compose.yml` can start the backend and an OpenWebUI container.
 
-* python 3.11+ (currently only tested on python 3.11.9), I recommend using conda environments
-* Tavily api key, avaible for free with 1000 credits/mo at [Tavily.com](https://tavily.com/)
-* OpenAI api key and credits (other models might work, as well as local models, llama3.1:70B might work if you want a local running LLM model)
+## Quick start — local (dev)
 
-# Installing
+1. Create and activate a virtual environment (recommended):
 
-1. Install python modules 
+```powershell
+# Windows PowerShell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install --upgrade pip
+```
 
-```bash
+2. Install Python dependencies:
+
+```powershell
 pip install -r requirements.txt
 ```
 
-2. Simply put your api key in a .env file on the root of the project.
+3. Create a `.env` file in the repository root and add API keys if you plan to use real LLMs / Tavily:
 
 ```env
-OPENAI_API_KEY=...
-TAVILY_API_KEY=...
+OPENAI_API_KEY=your_openai_key_here
+TAVILY_API_KEY=your_tavily_key_here
+# any other env vars you need
 ```
 
-3. Run the bash file to write the empty personal_data.json file.
+4. Run the backend directly (development):
 
-4. Then run `python src/python/app.py`
+```powershell
+# from repo root
+uvicorn src.python.app:app --host 0.0.0.0 --port 8000 --reload
+```
 
-5. Your chatbot should be available at [127.0.0.1:5000](https://127.0.0.1:5000/)
+5. Call the chat endpoint (PowerShell):
+
+```powershell
+Invoke-RestMethod -Method Post -Uri http://localhost:8000/chat -Body (@{message='Hello'} | ConvertTo-Json) -ContentType 'application/json'
+```
+
+The `/chat` endpoint returns JSON: `{ "response": "..." }`.
+
+## Docker / Docker Compose
+
+This repo includes a `Dockerfile` for the backend and a `docker-compose.yml` that can start two services:
+
+- `backend`: builds the backend image and exposes port `8000`.
+- `openwebui`: a helper entry that pulls an OpenWebUI image (configured in `docker-compose.yml`).
+
+To run Compose (without OpenWebUI if you prefer):
+
+```powershell
+# run only the backend
+docker compose up --build backend
+```
+
+To run both services (may require GHCR auth):
+
+```powershell
+docker compose up --build
+```

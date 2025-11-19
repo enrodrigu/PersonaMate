@@ -1,11 +1,3 @@
-"""
-Refactored core entrypoints and graph construction.
-
-Provides programmatic helpers to build the langgraph StateGraph, run a single chat
-exchange, or run a simple interactive loop. Designed to be importable by the
-FastAPI backend or other runners.
-"""
-
 from dotenv import load_dotenv
 load_dotenv()
 

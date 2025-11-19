@@ -1,13 +1,16 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
-from core import graph, config
-from utils.helper import _print_event
+from core import build_graph, chat_once
 
 app = FastAPI()
 
 
 class ChatRequest(BaseModel):
     message: str
+
+
+# Build the langgraph graph and config at startup
+graph, config = build_graph()
 
 
 @app.get("/")
@@ -19,17 +22,5 @@ def read_root():
 def chat(req: ChatRequest):
     user_input = req.message
     print(f"User input received: {user_input}")  # Debugging log
-    events = graph.stream(
-        {"messages": ("user", user_input)}, config, stream_mode="values"
-    )
-    last_response = ""
-    _printed = set()
-    for event in events:
-        response = _print_event(event, _printed)
-        if response:
-            last_response = response
-    return {"response": last_response}
-
-
-# For local development you can run:
-# uvicorn src.python.app:app --host 0.0.0.0 --port 8000 --reload
+    response_text = chat_once(user_input, graph, config)
+    return {"response": response_text}
