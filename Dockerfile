@@ -2,6 +2,9 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
+# Ensure the application package is importable as `src` inside the container
+ENV PYTHONPATH=/app
+
 # Install build deps and cleanup
 RUN apt-get update && apt-get install -y --no-install-recommends \
         build-essential \
@@ -12,7 +15,6 @@ RUN pip install --no-cache-dir -r /app/requirements.txt
 
 # Copy source
 COPY src /app/src
-COPY data /app/src/python/data
 
 WORKDIR /app/src/python
 

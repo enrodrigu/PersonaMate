@@ -97,10 +97,10 @@ def build_graph(thread_id: Optional[str] = None):
     the MemorySaver checkpointer.
     """
 
-    # Initialize the LLM and tools
-    llm = ChatOpenAI(model="gpt-4o-mini", temperature=0.4)
+    # Initialize the LLM and tools.
     tools = [TavilySearchResults(max_results=1), fetch_person_data, update_person_data, link_elements]
     prompt = _default_prompt()
+    llm = ChatOpenAI(model="gpt-4o-mini", temperature=0.4)
     assistant_runnable = prompt | llm.bind_tools(tools)
 
     # Build the graph

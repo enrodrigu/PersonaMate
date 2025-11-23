@@ -2,7 +2,7 @@ import time
 import os
 import pytest
 
-from src.python.utils.neo4j_graph import Neo4jGraph
+from utils.neo4j_graph import Neo4jGraph
 
 
 def wait_for_neo4j(uri, user, password, timeout=60):
