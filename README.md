@@ -8,7 +8,7 @@ This repository exposes a FastAPI backend (`src/python/app.py`) and a refactored
 - Backend: FastAPI application in `src/python/app.py` which builds the langgraph graph at startup (via `core.build_graph`) and exposes a `/chat` POST endpoint that returns JSON: `{ "response": "..." }`.
 - Core graph logic: `src/python/core.py` — contains `build_graph`, `chat_once`, and a CLI interactive loop.
 - Tools: `src/python/tools/*` (e.g. `personalDataTool.py`, `linkingTool.py`) provide tool functions used by the assistant.
-- Utilities: `src/python/utils/*` contains helpers and a small MultiPurposeGraph implementation.
+ - Utilities: `src/python/utils/*` contains helpers and a Neo4j wrapper (`neo4j_graph.py`). The project now uses Neo4j as the primary graph store.
 - Docker: `Dockerfile` builds the backend image; `docker-compose.yml` can start the backend and an OpenWebUI container.
 
 ## Quick start — local (dev)
@@ -66,6 +66,25 @@ docker compose up --build backend
 ```
 
 To run both services (may require GHCR auth):
+
+```powershell
+docker compose up --build
+```
+
+Neo4j service
+
+The compose setup includes a `neo4j` service. Set the password using `.env` or override `NEO4J_AUTH` in `docker-compose.yml`.
+
+Example `.env` entries to connect the backend to Neo4j:
+
+```env
+NEO4J_URI=bolt://neo4j:7687
+NEO4J_USER=neo4j
+NEO4J_PASSWORD=neo4j
+NEO4J_DB=neo4j
+```
+
+Run compose and the backend will connect to the embedded `neo4j` container:
 
 ```powershell
 docker compose up --build

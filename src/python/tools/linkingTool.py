@@ -8,41 +8,16 @@ import os
 # Add the project root to the system path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..')))
 
-from src.python.utils.MultiPurposeGraph import MultiPurposeGraph as mpg
-from src.python.utils.MultiPurposeGraph import Node as mpgNode
+from src.python.utils.neo4j_graph import Neo4jGraph
 from langchain_core.tools import tool
 
-FILEPATH = "data/links.pkl"
-
-def load_graph(filepath:str) -> mpg:
-    """
-    Load a MultiPurposeGraph object from a file and create the file if it doesn't exist
-
-    Args:
-        filepath (str): Path to the file to load the graph from
-
-    Returns:
-        mpg: The loaded graph
-    """
-    return mpg.load(FILEPATH)
-    
-def save_graph(graph:mpg, filepath:str) -> None:
-    """
-    Save a MultiPurposeGraph object to a file
-
-    Args:
-        graph (mpg): The graph to save
-        filepath (str): Path to the file to save the graph to
-    """
-    mpg.save(graph, FILEPATH)
 
 @tool
-def link_elements(element1:str, type1:str, element2:str, type2:str, linktype:str) -> str:
+def link_elements(element1: str, type1: str, element2: str, type2: str, linktype: str) -> str:
     """
     Link two elements in the graph with a given link type
 
     Args:
-        graph (mpg): The graph to link the elements in
         element1 (str): Name of the first element
         type1 (str): Type of the first element
         element2 (str): Name of the second element
@@ -52,15 +27,10 @@ def link_elements(element1:str, type1:str, element2:str, type2:str, linktype:str
     Returns:
         str: Success message
     """
-    graph = load_graph(FILEPATH)
-    node1 = graph.get_node(element1, type1)
-    node2 = graph.get_node(element2, type2)
-    if not node1:
-        node1 = mpgNode(type1, element1)
-        graph.add_node(node1)
-    if not node2:
-        node2 = mpgNode(type2, element2)
-        graph.add_node(node2)
-    graph.add_edge(node1, node2, linktype)
-    save_graph(graph, FILEPATH)
+    graph = Neo4jGraph.load()
+    graph.add_edge(type1, element1, type2, element2, linktype)
+    try:
+        graph.close()
+    except Exception:
+        pass
     return f"{element1} and {element2} linked with type {linktype}"

@@ -5,3 +5,5 @@ data/
 *.vscode/
 *.pytest_cache/
 *.DS_Store
+
+neo4j/
