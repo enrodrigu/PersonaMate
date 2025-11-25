@@ -11,81 +11,99 @@ This repository exposes a FastAPI backend (`src/python/app.py`) and a refactored
  - Utilities: `src/python/utils/*` contains helpers and a Neo4j wrapper (`neo4j_graph.py`). The project now uses Neo4j as the primary graph store.
 - Docker: `Dockerfile` builds the backend image; `docker-compose.yml` can start the backend and an OpenWebUI container.
 
-## Quick start — local (dev)
+## Docker-based setup and configuration
 
-1. Create and activate a virtual environment (recommended):
+Follow these steps to run PersonaMate with Docker (recommended for development and quick local deployment).
 
-```powershell
-# Windows PowerShell
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-python -m pip install --upgrade pip
+Prerequisites
+- Install Docker and Docker Compose (Compose v2 or later).
+- Optionally: docker login ghcr.io if you will pull the OpenWebUI image from GHCR.
+
+1) Clone the repo
+```bash
+git clone /path/to/repo
+cd PersonaMate
 ```
 
-2. Install Python dependencies:
-
-```powershell
-pip install -r requirements.txt
-```
-
-3. Create a `.env` file in the repository root and add API keys if you plan to use real LLMs / Tavily:
+2) Create a .env file
+Create a `.env` in the repo root to provide runtime configuration consumed by docker-compose and the backend. Example minimal `.env`:
 
 ```env
-OPENAI_API_KEY=your_openai_key_here
-TAVILY_API_KEY=your_tavily_key_here
-# any other env vars you need
+# Neo4j connection (when using the included neo4j service)
+NEO4J_URI=bolt://neo4j:7687
+NEO4J_USER=neo4j
+NEO4J_PASSWORD=change_this_password
+NEO4J_DB=neo4j
+
+# Optional: override OpenWebUI image (if present in docker-compose)
+OPENWEBUI_IMAGE=ghcr.io/openwebui/openwebui:latest
+
+# Backend port mapping
+BACKEND_PORT=8000
 ```
 
-4. Run the backend directly (development):
+Notes:
+- Set `NEO4J_PASSWORD` to a secure value. The compose file may use `NEO4J_AUTH` (format `neo4j/<password>`) for the Neo4j container — you can either set that in `docker-compose.yml` or export `NEO4J_AUTH` in `.env`.
+- To use the compose-provided Neo4j, ensure `NEO4J_URI=bolt://neo4j:7687` and the `NEO4J_USER`/`NEO4J_PASSWORD` match the Neo4j service auth.
 
-```powershell
-# from repo root
-uvicorn src.python.app:app --host 0.0.0.0 --port 8000 --reload
-```
-
-5. Call the chat endpoint (PowerShell):
-
-```powershell
-Invoke-RestMethod -Method Post -Uri http://localhost:8000/chat -Body (@{message='Hello'} | ConvertTo-Json) -ContentType 'application/json'
-```
-
-The `/chat` endpoint returns JSON: `{ "response": "..." }`.
-
-## Docker / Docker Compose
-
-This repo includes a `Dockerfile` for the backend and a `docker-compose.yml` that can start two services:
-
-- `backend`: builds the backend image and exposes port `8000`.
-- `openwebui`: a helper entry that pulls an OpenWebUI image (configured in `docker-compose.yml`).
-
-To run Compose (without OpenWebUI if you prefer):
-
-```powershell
-# run only the backend
+3) Start services with Docker Compose
+- Start only the backend (fast iteration, uses external Neo4j if configured):
+```bash
 docker compose up --build backend
 ```
 
-To run both services (may require GHCR auth):
-
-```powershell
+- Start the full stack (backend + neo4j + optional openwebui as defined):
+```bash
 docker compose up --build
 ```
 
-Neo4j service
-
-The compose setup includes a `neo4j` service. Set the password using `.env` or override `NEO4J_AUTH` in `docker-compose.yml`.
-
-Example `.env` entries to connect the backend to Neo4j:
-
-```env
-NEO4J_URI=bolt://neo4j:7687
-NEO4J_USER=neo4j
-NEO4J_PASSWORD=neo4j
-NEO4J_DB=neo4j
+If OpenWebUI is pulled from GHCR and requires auth:
+```bash
+docker login ghcr.io
 ```
 
-Run compose and the backend will connect to the embedded `neo4j` container:
-
-```powershell
-docker compose up --build
+4) Common commands
+- Tail logs:
+```bash
+docker compose logs -f backend
 ```
+- Stop and remove containers (preserve volumes unless `-v`):
+```bash
+docker compose down
+```
+- Remove volumes (will delete Neo4j data):
+```bash
+docker compose down -v
+```
+- Rebuild the backend after code changes:
+```bash
+docker compose up --build backend
+```
+
+5) Accessing the API
+- By default, the backend listens on port 8000. Example POST to chat endpoint:
+```bash
+curl -X POST http://localhost:8000/chat \
+    -H "Content-Type: application/json" \
+    -d '{"message":"Hello"}'
+```
+Response: JSON like `{ "response": "..." }`.
+
+6) Neo4j persistence and data
+- The compose config normally maps a Docker volume for Neo4j data. If you change or remove volumes you may lose stored graph data.
+- To connect the backend to an external Neo4j instance, update `NEO4J_URI`, `NEO4J_USER`, `NEO4J_PASSWORD`, and `NEO4J_DB` in `.env` before starting the backend container.
+
+7) Customizing behavior
+- To override images or ports, edit `docker-compose.yml` or set the corresponding `.env` keys (e.g., `OPENWEBUI_IMAGE`, `BACKEND_PORT`).
+- If you need a different Neo4j auth scheme, set `NEO4J_AUTH` (for the Neo4j container) to `neo4j/<password>`.
+
+Troubleshooting tips
+- If the backend fails to connect to Neo4j, verify `NEO4J_URI` and credentials, and inspect Neo4j logs (`docker compose logs neo4j`).
+- If OpenWebUI image pull fails, ensure you have internet access and, if required, authenticated to GHCR.
+
+This should be sufficient to run and configure PersonaMate with Docker. Adjust `.env` values and compose options based on your environment and security requirements.
+
+### OpenWebUI configuration
+
+To link openwebui to the backend API use go the configuration panel and add a connection to the backend with the url `http://backend:8000/v1`
+I recommend you to deactivate the openAI api link so that you only get PersonaMate custom model and it is easier to access. Or simply deactivate models you won't use.
