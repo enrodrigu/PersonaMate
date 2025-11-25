@@ -1,23 +1,72 @@
-import json
+import unicodedata
+import re
 from langchain_core.tools import tool
 
-def load_person_data(file_path):
-    with open(file_path, 'r') as file:
-        data = json.load(file)
-    return data
+from utils.neo4j_graph import Neo4jGraph
+
+
+def _normalize_name(name: str) -> str:
+    """Normalize a name for matching: strip, lowercase, remove diacritics and punctuation,
+    collapse whitespace."""
+    if not name:
+        return ""
+    s = name.strip()
+    # NFKD normalize and remove diacritics
+    s = unicodedata.normalize("NFKD", s)
+    s = "".join(ch for ch in s if not unicodedata.combining(ch))
+    # Lowercase
+    s = s.lower()
+    # Replace non-alphanumeric with space
+    s = re.sub(r"[^0-9a-z]+", " ", s)
+    # Collapse spaces
+    s = re.sub(r"\s+", " ", s).strip()
+    return s
+
 
 @tool
 def fetch_person_data(name: str) -> str:
+    """Fetch personal information about a person by name from Neo4j.
+
+    Returns a dict with node properties and a `graph_context` key containing neighbor info.
     """
-    Fetch personal information about a person regarding their name
-    """
-    data = load_person_data('data/personal_data.json')
-    if not data:
-        return "No data found"
-    for person in data:
-        if person["name"].lower() == name.lower():
-            return person
-    return "Person not found"
+    if not name:
+        return "Person not found"
+
+    norm = _normalize_name(name)
+    g = Neo4jGraph.load()
+    try:
+        # Perform case-insensitive lookup by comparing normalized forms
+        # We store and compare against the original `name` property but match using toLower
+        query = (
+            "MATCH (p:Person) WHERE toLower(p.name) = $lower RETURN p LIMIT 1"
+        )
+        with g._driver.session(database=g._database) as session:
+            rec = session.run(query, lower=name.lower()).single()
+            if rec:
+                node = rec.get("p")
+                props = dict(node)
+            else:
+                # Fallback: fetch all Person names and compare normalized forms locally
+                results = session.run("MATCH (p:Person) RETURN p.name as name, p as p")
+                props = None
+                for r in results:
+                    candidate = r.get("name")
+                    if _normalize_name(candidate) == norm:
+                        props = dict(r.get("p"))
+                        break
+                if not props:
+                    return "Person not found"
+
+        # Enrich with neighbors
+        neighbors = g.get_neighbors(props.get("name"), "Person")
+        props["graph_context"] = neighbors
+        return props
+    finally:
+        try:
+            g.close()
+        except Exception:
+            pass
+
 
 @tool
 def update_person_data(name: str,
@@ -27,48 +76,50 @@ def update_person_data(name: str,
                        city: str = None,
                        state: str = None,
                        zip: str = None) -> str:
-    """
-    Update personal information about a person regarding their name
+    """Create or update a Person node in Neo4j with the provided properties.
 
-    Args:
-        name (str): Name of the person
-        age (int, optional): Age of the person
-        email (str, optional): Email of the person
-        street (str, optional): Street address of the person
-        city (str, optional): City of the person
-        state (str, optional): State of the person
-        zip (str, optional): Zip code of the person
+    Address fields are stored as a map in the `address` property.
     """
-    data = load_person_data('data/personal_data.json')
-    for p in data:
-        if p["name"].lower() == name.lower():
-            if age is not None:
-                p["age"] = age
-            if email is not None:
-                p["email"] = email
-            if street is not None:
-                p["address"]["street"] = street
-            if city is not None:
-                p["address"]["city"] = city
-            if state is not None:
-                p["address"]["state"] = state
-            if zip is not None:
-                p["address"]["zip"] = zip
-            with open('data/personal_data.json', 'w') as file:
-                json.dump(data, file, indent=4)
-            return "Person data updated"
-    new_person = {
-        "name": name,
-        "age": age,
-        "email": email,
-        "address": {
-            "street": street,
-            "city": city,
-            "state": state,
-            "zip": zip
-        }
-    }
-    data.append(new_person)
-    with open('data/personal_data.json', 'w') as file:
-        json.dump(data, file, indent=4)
-    return "Person data added"
+    if not name:
+        return "Name is required"
+
+    g = Neo4jGraph.load()
+    try:
+        # Build address map
+        address = {}
+        if street is not None:
+            address["street"] = street
+        if city is not None:
+            address["city"] = city
+        if state is not None:
+            address["state"] = state
+        if zip is not None:
+            address["zip"] = zip
+
+        params = {"name": name}
+        set_clauses = []
+        if age is not None:
+            set_clauses.append("p.age = $age")
+            params["age"] = age
+        if email is not None:
+            set_clauses.append("p.email = $email")
+            params["email"] = email
+        if address:
+            set_clauses.append("p.address = $address")
+            params["address"] = address
+
+        # MERGE node and set properties
+        if set_clauses:
+            set_stmt = ", ".join(set_clauses)
+            query = f"MERGE (p:Person {{name: $name}}) SET {set_stmt} RETURN p"
+        else:
+            query = "MERGE (p:Person {name: $name}) RETURN p"
+
+        with g._driver.session(database=g._database) as session:
+            session.run(query, **params)
+        return "Person data updated"
+    finally:
+        try:
+            g.close()
+        except Exception:
+            pass

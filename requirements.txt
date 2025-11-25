@@ -1,7 +1,10 @@
-Flask
+fastapi
+uvicorn[standard]
 python-dotenv==0.19.2
 langchain-openai
 langchain-community
 langchain-core
 langgraph
 typing-extensions
+neo4j>=5.9.0
+pytest>=7.0.0

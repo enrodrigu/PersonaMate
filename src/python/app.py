@@ -1,26 +1,42 @@
-from flask import Flask, request, render_template
-from core import graph, config, _print_event
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+from core import build_graph, chat_once
+from api_shim import router as shim_router
+from tools_api import router as tools_router
 
-app = Flask(__name__, template_folder='../templates')
+app = FastAPI()
 
-@app.route('/')
-def index():
-    return render_template('index.html')
+# Enable CORS for local OpenWebUI; adjust origins in production
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-@app.route('/chat', methods=['POST'])
-def chat():
-    user_input = request.json.get('message')
+
+class ChatRequest(BaseModel):
+    message: str
+
+
+# Build the langgraph graph and config at startup
+graph, config = build_graph()
+
+# Mount the OpenAI-compatible shim and tool endpoints
+app.include_router(shim_router)
+app.include_router(tools_router)
+
+
+@app.get("/")
+def read_root():
+    return {"status": "ok", "service": "PersonaMate backend"}
+
+
+@app.post("/chat")
+def chat(req: ChatRequest):
+    user_input = req.message
     print(f"User input received: {user_input}")  # Debugging log
-    events = graph.stream(
-        {"messages": ("user", user_input)}, config, stream_mode="values"
-    )
-    responses = []
-    _printed = set()
-    for event in events:
-        response = _print_event(event, _printed)
-        if response:  # Ensure that only non-null responses are added
-            last_response = response
-    return last_response  # Return the concatenated responses as a single string
-
-if __name__ == '__main__':
-    app.run(debug=True)
+    response_text = chat_once(user_input, graph, config)
+    return {"response": response_text}

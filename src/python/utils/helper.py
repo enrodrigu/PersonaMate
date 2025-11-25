@@ -1,12 +1,22 @@
+import logging
+
 from langchain_core.messages import ToolMessage
 from langchain_core.runnables import RunnableLambda
 
 from langgraph.prebuilt import ToolNode
 
+logger = logging.getLogger("personamate.utils")
+
 
 def handle_tool_error(state) -> dict:
     error = state.get("error")
     tool_calls = state["messages"][-1].tool_calls
+    # Log the error details for backend observability
+    try:
+        logger.error("Tool error encountered: %s", repr(error))
+    except Exception:
+        # Ensure logging never raises
+        logger.exception("Failed to log tool error")
     return {
         "messages": [
             ToolMessage(

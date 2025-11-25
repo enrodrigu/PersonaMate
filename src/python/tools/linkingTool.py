@@ -2,47 +2,16 @@
 Tool for linking different elements such as persons and likings to each others with named attributes like "likes" or "knows".
 """
 
-import sys
-import os
-
-# Add the project root to the system path
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..')))
-
-from src.python.utils.MultiPurposeGraph import MultiPurposeGraph as mpg
-from src.python.utils.MultiPurposeGraph import Node as mpgNode
 from langchain_core.tools import tool
+from utils.neo4j_graph import Neo4jGraph
 
-FILEPATH = "data/links.pkl"
-
-def load_graph(filepath:str) -> mpg:
-    """
-    Load a MultiPurposeGraph object from a file and create the file if it doesn't exist
-
-    Args:
-        filepath (str): Path to the file to load the graph from
-
-    Returns:
-        mpg: The loaded graph
-    """
-    return mpg.load(FILEPATH)
-    
-def save_graph(graph:mpg, filepath:str) -> None:
-    """
-    Save a MultiPurposeGraph object to a file
-
-    Args:
-        graph (mpg): The graph to save
-        filepath (str): Path to the file to save the graph to
-    """
-    mpg.save(graph, FILEPATH)
 
 @tool
-def link_elements(element1:str, type1:str, element2:str, type2:str, linktype:str) -> str:
+def link_elements(element1: str, type1: str, element2: str, type2: str, linktype: str) -> str:
     """
     Link two elements in the graph with a given link type
 
     Args:
-        graph (mpg): The graph to link the elements in
         element1 (str): Name of the first element
         type1 (str): Type of the first element
         element2 (str): Name of the second element
@@ -52,15 +21,85 @@ def link_elements(element1:str, type1:str, element2:str, type2:str, linktype:str
     Returns:
         str: Success message
     """
-    graph = load_graph(FILEPATH)
-    node1 = graph.get_node(element1, type1)
-    node2 = graph.get_node(element2, type2)
-    if not node1:
-        node1 = mpgNode(type1, element1)
-        graph.add_node(node1)
-    if not node2:
-        node2 = mpgNode(type2, element2)
-        graph.add_node(node2)
-    graph.add_edge(node1, node2, linktype)
-    save_graph(graph, FILEPATH)
+    graph = Neo4jGraph.load()
+    graph.add_edge(type1, element1, type2, element2, linktype)
+    try:
+        graph.close()
+    except Exception:
+        pass
     return f"{element1} and {element2} linked with type {linktype}"
+
+
+@tool
+def fetch_entity_context(name: str, type: str = "Person", depth: int = 1) -> str:
+    """Fetch structured context for an entity from Neo4j and return a summary string.
+
+    The function performs a breadth-first traversal up to `depth` steps and returns
+    a JSON-like string containing nodes and edges plus a short human-readable summary
+    that can be passed to an LLM as additional context.
+    """
+    graph = Neo4jGraph.load()
+
+    # BFS
+    queue = [(name, type, 0)]
+    visited = set()
+    nodes = {}
+    edges = []
+
+    while queue:
+        cur_name, cur_type, cur_depth = queue.pop(0)
+        key = (cur_name, cur_type)
+        if key in visited:
+            continue
+        visited.add(key)
+        nodes[key] = {"name": cur_name, "type": cur_type}
+
+        # fetch neighbors
+        try:
+            neigh = graph.get_neighbors(cur_name, cur_type)
+        except Exception:
+            neigh = []
+
+        for n in neigh:
+            n_name = n.get("name")
+            n_labels = n.get("labels") or []
+            n_type = n_labels[0] if n_labels else "Unknown"
+            if n.get("direction") == "out":
+                edges.append({"from": {"name": cur_name, "type": cur_type},
+                              "to": {"name": n_name, "type": n_type},
+                              "rel": n.get("rel")})
+                neighbor_key = (n_name, n_type)
+            else:
+                edges.append({"from": {"name": n_name, "type": n_type},
+                              "to": {"name": cur_name, "type": cur_type},
+                              "rel": n.get("rel")})
+                neighbor_key = (n_name, n_type)
+
+            if neighbor_key not in visited and cur_depth + 1 <= depth:
+                queue.append((neighbor_key[0], neighbor_key[1], cur_depth + 1))
+                nodes[neighbor_key] = {"name": neighbor_key[0], "type": neighbor_key[1]}
+
+    # Build human-readable summary
+    lines = []
+    for e in edges:
+        lines.append(f"{e['from']['name']} ({e['from']['type']}) -[{e['rel']}]-> {e['to']['name']} ({e['to']['type']})")
+
+    summary = "; ".join(lines) if lines else "No relations found"
+
+    # Close driver
+    try:
+        graph.close()
+    except Exception:
+        pass
+
+    # Return a compact payload suitable for LLM context injection
+    payload = {
+        "entity": {"name": name, "type": type},
+        "nodes": list(nodes.values()),
+        "edges": edges,
+        "summary": summary,
+    }
+
+    import json
+
+    return json.dumps(payload)
