@@ -1,109 +1,188 @@
 # PersonaMate
-PersonaMate is a personal assistant project that uses a langgraph-based agent and LLMs to answer questions, manage personal contact data, and create relations between entities.
 
-This repository exposes a FastAPI backend (`src/python/app.py`) and a refactored core graph implementation (`src/python/core.py`) that provides programmatic helpers (`build_graph`, `chat_once`, and `interactive_loop`). The project includes Docker artifacts to run the backend and optionally an OpenWebUI frontend via Docker Compose.
+PersonaMate is a personal knowledge graph assistant that uses AI and Model Context Protocol (MCP) to manage personal contact data and relationships. The project exposes an **MCP server** using FastMCP that integrates with OpenWebUI for a complete AI assistant experience.
 
-## Current architecture
+## Architecture
 
-- Backend: FastAPI application in `src/python/app.py` which builds the langgraph graph at startup (via `core.build_graph`) and exposes a `/chat` POST endpoint that returns JSON: `{ "response": "..." }`.
-- Core graph logic: `src/python/core.py` — contains `build_graph`, `chat_once`, and a CLI interactive loop.
-- Tools: `src/python/tools/*` (e.g. `personalDataTool.py`, `linkingTool.py`) provide tool functions used by the assistant.
- - Utilities: `src/python/utils/*` contains helpers and a Neo4j wrapper (`neo4j_graph.py`). The project now uses Neo4j as the primary graph store.
-- Docker: `Dockerfile` builds the backend image; `docker-compose.yml` can start the backend and an OpenWebUI container.
+### Core Components
 
-## Docker-based setup and configuration
+- **MCP Server** (`src/python/mcp_server.py`): FastMCP-based server exposing tools and resources
+- **Backend** (`src/python/app.py`): FastAPI application for legacy endpoints
+- **Graph Store**: Neo4j database for storing entities and relationships
+- **Tools** (`src/python/tools/*`): Modular tools for managing persons and relationships
+- **OpenWebUI**: Web interface for interacting with the MCP server
 
-Follow these steps to run PersonaMate with Docker (recommended for development and quick local deployment).
+### MCP Tools & Resources
 
-Prerequisites
-- Install Docker and Docker Compose (Compose v2 or later).
-- Optionally: docker login ghcr.io if you will pull the OpenWebUI image from GHCR.
+PersonaMate exposes its functionality through the Model Context Protocol:
 
-1) Clone the repo
+**Tools**:
+- `fetch_person`: Look up person information
+- `update_person`: Update person data
+- `link_entities`: Create relationships between entities
+- `get_entity_context`: Get rich relationship context
+
+**Resources**:
+- `graph://persons`: List all persons
+- `graph://relationships`: List all relationships  
+- `graph://stats`: Graph statistics
+
+**Prompts**:
+- `person_lookup_prompt`: Comprehensive person information lookup
+- `relationship_analysis_prompt`: Analyze relationships between people
+
+## Quick Start with Docker
+
+### 1. Setup Environment
+
 ```bash
-git clone /path/to/repo
-cd PersonaMate
+cp .env-example .env
 ```
 
-2) Create a .env file
-Create a `.env` in the repo root to provide runtime configuration consumed by docker-compose and the backend. Example minimal `.env`:
+### 2. Start All Services
 
-```env
-# Neo4j connection (when using the included neo4j service)
-NEO4J_URI=bolt://neo4j:7687
-NEO4J_USER=neo4j
-NEO4J_PASSWORD=change_this_password
-NEO4J_DB=neo4j
-
-# Optional: override OpenWebUI image (if present in docker-compose)
-OPENWEBUI_IMAGE=ghcr.io/openwebui/openwebui:latest
-
-# Backend port mapping
-BACKEND_PORT=8000
-```
-
-Notes:
-- Set `NEO4J_PASSWORD` to a secure value. The compose file may use `NEO4J_AUTH` (format `neo4j/<password>`) for the Neo4j container — you can either set that in `docker-compose.yml` or export `NEO4J_AUTH` in `.env`.
-- To use the compose-provided Neo4j, ensure `NEO4J_URI=bolt://neo4j:7687` and the `NEO4J_USER`/`NEO4J_PASSWORD` match the Neo4j service auth.
-
-3) Start services with Docker Compose
-- Start only the backend (fast iteration, uses external Neo4j if configured):
 ```bash
-docker compose up --build backend
+# Start Neo4j, MCP server, backend, and OpenWebUI
+docker-compose up -d
 ```
 
-- Start the full stack (backend + neo4j + optional openwebui as defined):
+This will start:
+- **Neo4j** on ports 7474 (HTTP) and 7687 (Bolt)
+- **MCP Server** on port 8080 (SSE transport)
+- **Backend** on port 8000 (legacy endpoints)
+- **OpenWebUI** on port 3000
+
+### 3. Access OpenWebUI
+
+Open your browser to `http://localhost:3000` and configure OpenWebUI to use the MCP server.
+
+## OpenWebUI Configuration
+
+To connect OpenWebUI to the MCP server:
+
+1. Log into OpenWebUI at `http://localhost:3000`
+2. Go to **Settings** → **Functions**
+3. Add the PersonaMate MCP server endpoint: `http://mcp:8080/sse`
+4. The MCP tools will now be available in your chat interface
+
+## Viewing Graph Data
+
+Access Neo4j Browser at `http://localhost:7474` to visualize your knowledge graph:
+- Username: `neo4j`
+- Password: (from your `.env` file)
+
+## Common Operations
+
+### View Logs
 ```bash
-docker compose up --build
+# All services
+docker-compose logs -f
+
+# Specific service
+docker-compose logs -f mcp
+docker-compose logs -f neo4j
 ```
 
-If OpenWebUI is pulled from GHCR and requires auth:
+### Restart Services
 ```bash
-docker login ghcr.io
+docker-compose restart mcp
 ```
 
-4) Common commands
-- Tail logs:
+### Stop All Services
 ```bash
-docker compose logs -f backend
+docker-compose down
 ```
-- Stop and remove containers (preserve volumes unless `-v`):
+
+### Reset Graph Data
 ```bash
-docker compose down
+# Stop services and remove Neo4j data volume
+docker-compose down -v
+
+# Restart
+docker-compose up -d
 ```
-- Remove volumes (will delete Neo4j data):
+
+## Development
+
+### Local Development (without Docker)
+
+1. Install dependencies:
 ```bash
-docker compose down -v
+pip install -r requirements.txt
 ```
-- Rebuild the backend after code changes:
+
+2. Start Neo4j:
 ```bash
-docker compose up --build backend
+docker-compose up neo4j -d
 ```
 
-5) Accessing the API
-- By default, the backend listens on port 8000. Example POST to chat endpoint:
+3. Set environment variables:
 ```bash
-curl -X POST http://localhost:8000/chat \
-    -H "Content-Type: application/json" \
-    -d '{"message":"Hello"}'
+export NEO4J_URI=bolt://localhost:7687
+export NEO4J_USER=neo4j
+export NEO4J_PASSWORD=your-password
+export NEO4J_DB=neo4j
 ```
-Response: JSON like `{ "response": "..." }`.
 
-6) Neo4j persistence and data
-- The compose config normally maps a Docker volume for Neo4j data. If you change or remove volumes you may lose stored graph data.
-- To connect the backend to an external Neo4j instance, update `NEO4J_URI`, `NEO4J_USER`, `NEO4J_PASSWORD`, and `NEO4J_DB` in `.env` before starting the backend container.
+4. Run the MCP server:
+```bash
+python src/python/mcp_server.py --transport sse --port 8080
+```
 
-7) Customizing behavior
-- To override images or ports, edit `docker-compose.yml` or set the corresponding `.env` keys (e.g., `OPENWEBUI_IMAGE`, `BACKEND_PORT`).
-- If you need a different Neo4j auth scheme, set `NEO4J_AUTH` (for the Neo4j container) to `neo4j/<password>`.
+### Running Tests
 
-Troubleshooting tips
-- If the backend fails to connect to Neo4j, verify `NEO4J_URI` and credentials, and inspect Neo4j logs (`docker compose logs neo4j`).
-- If OpenWebUI image pull fails, ensure you have internet access and, if required, authenticated to GHCR.
+```bash
+# Run all tests
+pytest test/
 
-This should be sufficient to run and configure PersonaMate with Docker. Adjust `.env` values and compose options based on your environment and security requirements.
+# Run specific test file
+pytest test/python/utils/neo4j_integration_test.py
 
-### OpenWebUI configuration
+# Run tests in Docker
+docker-compose up pytest
+```
+
+## Project Structure
+
+```
+PersonaMate/
+├── src/python/
+│   ├── mcp_server.py           # FastMCP server (main entry point)
+│   ├── app.py                  # FastAPI backend
+│   ├── core.py                 # LangGraph agent logic
+│   ├── tools/
+│   │   ├── personalDataTool.py # Person CRUD operations
+│   │   └── linkingTool.py      # Relationship management
+│   └── utils/
+│       ├── neo4j_graph.py      # Neo4j wrapper
+│       └── helper.py           # Utility functions
+├── docs/
+│   └── mcp_api.md              # MCP API documentation
+├── test/
+│   └── python/utils/
+│       ├── neo4j_integration_test.py
+│       └── smoke_non_llm_test.py
+├── docker-compose.yml          # Docker services configuration
+├── Dockerfile                  # Container image
+├── requirements.txt            # Python dependencies
+└── .env                        # Environment configuration (create this)
+```
+
+## Architecture Benefits
+
+- ✅ **MCP Protocol**: Standard interface for AI assistants
+- ✅ **OpenWebUI Integration**: Modern web interface
+- ✅ **Neo4j Graph**: Powerful relationship modeling
+- ✅ **Docker Deployment**: Easy setup and scaling
+- ✅ **Modular Tools**: Extensible functionality
+
+## Contributing
+
+See `docs/mcp_api.md` for the complete MCP API specification.
+
+## License
+
+See LICENSE file for details.
 
 To link openwebui to the backend API use go the configuration panel and add a connection to the backend with the url `http://backend:8000/v1`
 I recommend you to deactivate the openAI api link so that you only get PersonaMate custom model and it is easier to access. Or simply deactivate models you won't use.

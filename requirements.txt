@@ -6,5 +6,6 @@ langchain-community
 langchain-core
 langgraph
 typing-extensions
-neo4j>=5.9.0
-pytest>=7.0.0
+neo4j
+pytest
+fastmcp
