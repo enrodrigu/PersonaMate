@@ -7,7 +7,6 @@ PersonaMate is a personal knowledge graph assistant that uses AI and Model Conte
 ### Core Components
 
 - **MCP Server** (`src/python/mcp_server.py`): FastMCP-based server exposing tools and resources
-- **Backend** (`src/python/app.py`): FastAPI application for legacy endpoints
 - **Graph Store**: Neo4j database for storing entities and relationships
 - **Tools** (`src/python/tools/*`): Modular tools for managing persons and relationships
 - **OpenWebUI**: Web interface for interacting with the MCP server
@@ -49,7 +48,6 @@ docker-compose up -d
 This will start:
 - **Neo4j** on ports 7474 (HTTP) and 7687 (Bolt)
 - **MCP Server** on port 8080 (SSE transport)
-- **Backend** on port 8000 (legacy endpoints)
 - **OpenWebUI** on port 3000
 
 ### 3. Access OpenWebUI
@@ -58,12 +56,6 @@ Open your browser to `http://localhost:3000` and configure OpenWebUI to use the 
 
 ## OpenWebUI Configuration
 
-To connect OpenWebUI to the MCP server:
-
-1. Log into OpenWebUI at `http://localhost:3000`
-2. Go to **Settings** → **Functions**
-3. Add the PersonaMate MCP server endpoint: `http://mcp:8080/sse`
-4. The MCP tools will now be available in your chat interface
 
 ## Viewing Graph Data
 
@@ -148,8 +140,7 @@ docker-compose up pytest
 PersonaMate/
 ├── src/python/
 │   ├── mcp_server.py           # FastMCP server (main entry point)
-│   ├── app.py                  # FastAPI backend
-│   ├── core.py                 # LangGraph agent logic
+│   ├── fastmcp.json            # FastMCP server configuration
 │   ├── tools/
 │   │   ├── personalDataTool.py # Person CRUD operations
 │   │   └── linkingTool.py      # Relationship management
@@ -157,11 +148,10 @@ PersonaMate/
 │       ├── neo4j_graph.py      # Neo4j wrapper
 │       └── helper.py           # Utility functions
 ├── docs/
-│   └── mcp_api.md              # MCP API documentation
+│   └── mcp.md                  # MCP documentation
 ├── test/
 │   └── python/utils/
-│       ├── neo4j_integration_test.py
-│       └── smoke_non_llm_test.py
+│       └── neo4j_integration_test.py
 ├── docker-compose.yml          # Docker services configuration
 ├── Dockerfile                  # Container image
 ├── requirements.txt            # Python dependencies
@@ -178,11 +168,10 @@ PersonaMate/
 
 ## Contributing
 
-See `docs/mcp_api.md` for the complete MCP API specification.
+See `docs/mcp.md` for the complete MCP specification.
 
 ## License
 
 See LICENSE file for details.
 
-To link openwebui to the backend API use go the configuration panel and add a connection to the backend with the url `http://backend:8000/v1`
 I recommend you to deactivate the openAI api link so that you only get PersonaMate custom model and it is easier to access. Or simply deactivate models you won't use.

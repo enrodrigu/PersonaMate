@@ -22,7 +22,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("personamate.mcp")
 
 # Create the FastMCP server
-mcp = FastMCP("PersonaMate", dependencies=["neo4j>=5.9.0"])
+mcp = FastMCP("PersonaMate")
 
 
 # ============================================================================

@@ -1,21 +1,4 @@
 services:
-  backend:
-    build: .
-    container_name: personamate-backend
-    ports:
-      - "8000:8000"
-    volumes:
-      - ./src:/app/src
-    env_file:
-      - .env
-    environment:
-      - PYTHONPATH=/app/src/python
-      - NEO4J_URI=bolt://neo4j:7687
-      - NEO4J_USER=neo4j
-      - NEO4J_DB=neo4j
-    depends_on:
-      - neo4j
-
   mcp:
     build: .
     container_name: personamate-mcp
@@ -33,7 +16,7 @@ services:
     depends_on:
       - neo4j
     # Run MCP server with SSE transport for HTTP access
-    command: ["python", "/app/src/python/mcp_server.py", "--transport", "sse", "--port", "8080"]
+    command: ["fastmcp", "run", "/app/src/python/mcp_server.py", "--transport", "sse", "--port", "8080", "--host", "0.0.0.0"]
 
   openwebui:
     # NOTE: Image name may need to be adjusted to match the OpenWebUI image you want to use.
@@ -44,9 +27,9 @@ services:
     env_file:
       - .env
     environment:
-      - BACKEND_URL=http://backend:8000
+      - MCP_SERVER_URL=http://mcp:8080
     depends_on:
-      - backend
+      - mcp
 
   pytest:
     build: .
