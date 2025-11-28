@@ -8,6 +8,7 @@ ENV PYTHONPATH=/app
 # Install build deps and cleanup
 RUN apt-get update && apt-get install -y --no-install-recommends \
         build-essential \
+<<<<<<< HEAD
         curl \
     && rm -rf /var/lib/apt/lists/*
 
@@ -18,6 +19,12 @@ COPY requirements.txt /app/requirements.txt
 
 # Install all dependencies using uv (much faster than pip)
 RUN uv pip install --system -r /app/requirements.txt
+=======
+    && rm -rf /var/lib/apt/lists/*
+
+COPY requirements.txt /app/requirements.txt
+RUN pip install --no-cache-dir -r /app/requirements.txt
+>>>>>>> origin/master
 
 # Copy source
 COPY src /app/src

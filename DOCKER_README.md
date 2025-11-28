@@ -33,7 +33,6 @@ Example `.env` contents:
 
 ```env
 OPENAI_API_KEY=your_openai_key
-TAVILY_API_KEY=your_tavily_key
 ```
 
 Be careful not to commit `.env` to version control. Add `.env` to your `.gitignore` if needed.
