@@ -1,5 +1,6 @@
 import unicodedata
 import re
+import json
 from langchain_core.tools import tool
 
 from utils.neo4j_graph import Neo4jGraph
@@ -57,6 +58,13 @@ def fetch_person_data(name: str) -> str:
                 if not props:
                     return "Person not found"
 
+        # Parse JSON address if it exists
+        if "address" in props and isinstance(props["address"], str):
+            try:
+                props["address"] = json.loads(props["address"])
+            except (json.JSONDecodeError, TypeError):
+                pass  # Keep as string if parsing fails
+
         # Enrich with neighbors
         neighbors = g.get_neighbors(props.get("name"), "Person")
         props["graph_context"] = neighbors
@@ -105,8 +113,9 @@ def update_person_data(name: str,
             set_clauses.append("p.email = $email")
             params["email"] = email
         if address:
+            # Store address as JSON string since Neo4j doesn't support map properties directly
             set_clauses.append("p.address = $address")
-            params["address"] = address
+            params["address"] = json.dumps(address)
 
         # MERGE node and set properties
         if set_clauses:
@@ -116,7 +125,9 @@ def update_person_data(name: str,
             query = "MERGE (p:Person {name: $name}) RETURN p"
 
         with g._driver.session(database=g._database) as session:
-            session.run(query, **params)
+            result = session.run(query, **params)
+            # Consume the result to ensure transaction commits
+            result.single()
         return "Person data updated"
     finally:
         try:

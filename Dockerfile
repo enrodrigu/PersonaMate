@@ -8,10 +8,16 @@ ENV PYTHONPATH=/app
 # Install build deps and cleanup
 RUN apt-get update && apt-get install -y --no-install-recommends \
         build-essential \
+        curl \
     && rm -rf /var/lib/apt/lists/*
 
+# Install uv for faster Python package installation
+RUN pip install uvicorn uv
+
 COPY requirements.txt /app/requirements.txt
-RUN pip install --no-cache-dir -r /app/requirements.txt
+
+# Install all dependencies using uv (much faster than pip)
+RUN uv pip install --system -r /app/requirements.txt
 
 # Copy source
 COPY src /app/src

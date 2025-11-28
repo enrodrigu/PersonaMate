@@ -1,0 +1,6 @@
+{
+  "entrypoint": "mcp_server.py",
+  "environment": {
+    "dependencies": ["neo4j>=5.9.0"]
+  }
+}
