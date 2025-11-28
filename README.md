@@ -5,6 +5,28 @@ PersonaMate is a personal knowledge graph assistant that uses AI and Model Conte
 ![CI/CD Pipeline](https://github.com/enrodrigu/PersonaMate/workflows/CI%2FCD%20Pipeline/badge.svg)
 [![codecov](https://codecov.io/gh/enrodrigu/PersonaMate/branch/main/graph/badge.svg)](https://codecov.io/gh/enrodrigu/PersonaMate)
 
+## 🚀 Quick Start
+
+Get PersonaMate running in minutes with our automated deployment script!
+
+### Windows (PowerShell)
+```powershell
+.\deploy.ps1
+```
+
+### Linux/macOS
+```bash
+chmod +x deploy.sh && ./deploy.sh
+```
+
+**Choose your deployment mode:**
+- **Full Stack**: MCP + Neo4j + OpenWebUI (complete chat interface at http://localhost:3000)
+- **MCP Only**: MCP + Neo4j (for custom integrations at http://localhost:8080/sse)
+
+📖 **Need more details?** See [QUICKSTART.md](QUICKSTART.md) for quick reference or [DEPLOYMENT.md](DEPLOYMENT.md) for comprehensive guide.
+
+---
+
 
 ## Architecture
 
@@ -34,148 +56,273 @@ PersonaMate exposes its functionality through the Model Context Protocol:
 - `person_lookup_prompt`: Comprehensive person information lookup
 - `relationship_analysis_prompt`: Analyze relationships between people
 
-## Quick Start with Docker
+## 📦 Deployment Options
 
-### 1. Setup Environment
+PersonaMate offers flexible deployment to match your needs:
 
+### Option 1: Automated Deployment (Recommended)
+
+**Interactive mode** - Let the script guide you:
+```bash
+.\deploy.ps1        # Windows
+./deploy.sh         # Linux/macOS
+```
+
+**Direct deployment**:
+```bash
+# Full Stack (MCP + Neo4j + OpenWebUI)
+.\deploy.ps1 -Mode full    # Windows
+./deploy.sh full           # Linux/macOS
+
+# MCP Only (MCP + Neo4j)
+.\deploy.ps1 -Mode mcp-only    # Windows
+./deploy.sh mcp-only           # Linux/macOS
+```
+
+**What you get:**
+- ✅ Prerequisites validation
+- ✅ Automatic service configuration
+- ✅ Health checks
+- ✅ Access URLs and credentials
+- ✅ Next steps guidance
+
+### Option 2: Manual Docker Deployment
+
+**1. Setup Environment**
 ```bash
 cp .env-example .env
+# Edit .env with your OPENAI_API_KEY and other settings
 ```
 
-### 2. Start All Services
-
+**2. Choose your stack**
 ```bash
-# Start Neo4j, MCP server, backend, and OpenWebUI
-docker-compose up -d
+# Full stack
+docker compose up -d
+
+# MCP only
+docker compose up -d neo4j mcp
 ```
 
-This will start:
-- **Neo4j** on ports 7474 (HTTP) and 7687 (Bolt)
-- **MCP Server** on port 8080 (SSE transport)
-- **OpenWebUI** on port 3000
+**3. Access Services**
+- OpenWebUI: http://localhost:3000 (full stack only)
+- MCP Server: http://localhost:8080/sse
+- Neo4j Browser: http://localhost:7474
 
-### 3. Access OpenWebUI
+### Service URLs & Credentials
 
-Open your browser to `http://localhost:3000` and configure OpenWebUI to use the MCP server.
+| Service | URL | Credentials |
+|---------|-----|------------|
+| OpenWebUI | http://localhost:3000 | Create on first visit |
+| MCP Server | http://localhost:8080/sse | No authentication |
+| Neo4j Browser | http://localhost:7474 | neo4j / personamate |
+| Neo4j Bolt | bolt://localhost:7687 | neo4j / personamate |
 
-## OpenWebUI Configuration
+📖 **For detailed deployment instructions, troubleshooting, and advanced configuration**, see [DEPLOYMENT.md](DEPLOYMENT.md)
 
+## 🎨 Using PersonaMate
 
-## Viewing Graph Data
+### With OpenWebUI (Full Stack)
 
-Access Neo4j Browser at `http://localhost:7474` to visualize your knowledge graph:
-- Username: `neo4j`
-- Password: (from your `.env` file)
+1. **Access OpenWebUI**: Navigate to http://localhost:3000
+2. **Create Account**: First-time setup requires admin account creation
+3. **Start Chatting**: Use natural language to:
+   - Add people: "Add John Doe, age 35, email john@example.com"
+   - Find people: "Who is John Doe?"
+   - Create relationships: "Link John Doe and Jane Smith as friends"
+   - Get context: "Show me John's relationships"
 
-## Common Operations
+### With MCP Client (MCP-Only)
 
-### View Logs
+Connect your MCP-compatible client to `http://localhost:8080/sse` and use the available tools:
+- `fetch_person` - Look up person information
+- `update_person` - Create or update person data
+- `link_entities` - Create relationships
+- `get_entity_context` - Get relationship graph
+
+### Viewing the Knowledge Graph
+
+Access Neo4j Browser at http://localhost:7474:
+- **Username**: `neo4j`
+- **Password**: `personamate` (or from your `.env`)
+
+**Example queries**:
+```cypher
+// View all persons
+MATCH (p:Person) RETURN p LIMIT 25
+
+// View all relationships
+MATCH (a)-[r]->(b) RETURN a, r, b LIMIT 50
+
+// Find a specific person's network
+MATCH (p:Person {name: "John Doe"})-[r]-(connected)
+RETURN p, r, connected
+```
+
+## 🛠️ Common Operations
+
+### Managing Services
 ```bash
-# All services
-docker-compose logs -f
+# View service status
+docker compose ps
 
-# Specific service
-docker-compose logs -f mcp
-docker-compose logs -f neo4j
+# View logs (all services)
+docker compose logs -f
+
+# View logs (specific service)
+docker compose logs -f mcp
+docker compose logs -f neo4j
+
+# Restart a service
+docker compose restart mcp
+
+# Stop all services
+docker compose down
+
+# Stop and remove all data
+docker compose down -v
 ```
 
-### Restart Services
+### Quick Troubleshooting
 ```bash
-docker-compose restart mcp
+# Check Neo4j is ready
+docker exec personamate-neo4j cypher-shell -u neo4j -p personamate "RETURN 1"
+
+# Check MCP server logs
+docker compose logs mcp --tail 50
+
+# Rebuild and restart MCP
+docker compose build mcp && docker compose restart mcp
 ```
 
-### Stop All Services
-```bash
-docker-compose down
-```
+📖 **For more troubleshooting help**, see [DEPLOYMENT.md](DEPLOYMENT.md#troubleshooting)
 
-### Reset Graph Data
-```bash
-# Stop services and remove Neo4j data volume
-docker-compose down -v
-
-# Restart
-docker-compose up -d
-```
-
-## Development
-
-### Local Development (without Docker)
-
-1. Install dependencies:
-```bash
-pip install -r requirements.txt
-```
-
-2. Start Neo4j:
-```bash
-docker-compose up neo4j -d
-```
-
-3. Set environment variables:
-```bash
-export NEO4J_URI=bolt://localhost:7687
-export NEO4J_USER=neo4j
-export NEO4J_PASSWORD=your-password
-export NEO4J_DB=neo4j
-```
-
-4. Run the MCP server:
-```bash
-python src/python/mcp_server.py --transport sse --port 8080
-```
+## 💻 Development
 
 ### Running Tests
 
+**All tests in Docker** (recommended):
 ```bash
+# Start services
+docker compose up -d neo4j mcp
+
 # Run all tests
-pytest test/
+docker compose run --rm pytest pytest /app/test/python/ -v
 
-# Run specific test file
-pytest test/python/utils/neo4j_integration_test.py
+# Run specific test suite
+docker compose run --rm pytest pytest /app/test/python/test_mcp_integration.py -v
+docker compose run --rm pytest pytest /app/test/python/test_tools.py -v
 
-# Run tests in Docker
-docker-compose up pytest
+# Run with coverage
+docker compose run --rm pytest pytest /app/test/python/ -v --cov=/app/src/python --cov-report=term
 ```
 
-## Project Structure
+**Test suite includes:**
+- ✅ 6 MCP integration tests
+- ✅ 14 tool implementation tests  
+- ✅ Cross-tool workflow validation
+- ✅ Neo4j persistence checks
+
+### Local Development (without Docker)
+
+1. **Install dependencies**:
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+2. **Start Neo4j**:
+   ```bash
+   docker compose up neo4j -d
+   ```
+
+3. **Set environment variables**:
+   ```bash
+   export NEO4J_URI=bolt://localhost:7687
+   export NEO4J_USER=neo4j
+   export NEO4J_PASSWORD=personamate
+   export NEO4J_DB=neo4j
+   export OPENAI_API_KEY=your_key_here
+   ```
+
+4. **Run the MCP server**:
+   ```bash
+   fastmcp run src/python/mcp_server.py --transport sse --port 8080
+   ```
+
+### CI/CD Pipeline
+
+The project uses GitHub Actions for automated testing on every push/PR:
+- Runs all 20 tests in Docker environment
+- Code quality checks (flake8, black)
+- Coverage reporting
+
+📖 **See [.github/workflows/README.md](.github/workflows/README.md) for CI/CD documentation**
+
+## 📁 Project Structure
 
 ```
 PersonaMate/
+├── deploy.ps1                  # Windows deployment script
+├── deploy.sh                   # Linux/macOS deployment script
+├── QUICKSTART.md              # Quick reference guide
+├── DEPLOYMENT.md              # Comprehensive deployment guide
 ├── src/python/
-│   ├── mcp_server.py           # FastMCP server (main entry point)
-│   ├── fastmcp.json            # FastMCP server configuration
+│   ├── mcp_server.py          # FastMCP server (main entry point)
+│   ├── fastmcp.json           # FastMCP configuration
 │   ├── tools/
 │   │   ├── personalDataTool.py # Person CRUD operations
 │   │   └── linkingTool.py      # Relationship management
 │   └── utils/
-│       ├── neo4j_graph.py      # Neo4j wrapper
-│       └── helper.py           # Utility functions
-├── docs/
-│   └── mcp.md                  # MCP documentation
-├── test/
-│   └── python/utils/
-│       └── neo4j_integration_test.py
-├── docker-compose.yml          # Docker services configuration
-├── Dockerfile                  # Container image
-├── requirements.txt            # Python dependencies
-└── .env                        # Environment configuration (create this)
+│       ├── neo4j_graph.py     # Neo4j wrapper
+│       └── helper.py          # Utility functions
+├── test/python/
+│   ├── test_mcp_integration.py # MCP protocol tests
+│   └── test_tools.py          # Tool implementation tests
+├── .github/workflows/
+│   ├── ci.yml                 # GitHub Actions pipeline
+│   └── README.md              # CI/CD documentation
+├── docker-compose.yml         # Docker services configuration
+├── Dockerfile                 # MCP server container
+└── requirements.txt           # Python dependencies
 ```
 
-## Architecture Benefits
+## ✨ Key Features
 
-- ✅ **MCP Protocol**: Standard interface for AI assistants
-- ✅ **OpenWebUI Integration**: Modern web interface
-- ✅ **Neo4j Graph**: Powerful relationship modeling
-- ✅ **Docker Deployment**: Easy setup and scaling
-- ✅ **Modular Tools**: Extensible functionality
+- 🤖 **MCP Protocol**: Standard interface for AI assistants
+- 💬 **OpenWebUI**: Modern chat interface (optional)
+- 🕸️ **Neo4j Graph**: Powerful relationship modeling
+- 🐳 **Docker**: Easy deployment and scaling
+- 🔧 **Modular Tools**: Extensible functionality
+- ✅ **Comprehensive Tests**: 20 automated tests with CI/CD
+- 📊 **Graph Visualization**: Neo4j Browser integration
 
-## Contributing
+## 📚 Documentation
 
-See `docs/mcp.md` for the complete MCP specification.
+- **[QUICKSTART.md](QUICKSTART.md)** - Get started in 2 commands
+- **[DEPLOYMENT.md](DEPLOYMENT.md)** - Full deployment guide with troubleshooting
+- **[.github/workflows/README.md](.github/workflows/README.md)** - CI/CD pipeline documentation
+- **[DOCKER_README.md](DOCKER_README.md)** - Docker-specific documentation
 
-## License
+## 🤝 Contributing
+
+Contributions are welcome! Please:
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Make your changes with tests
+4. Run the test suite: `docker compose run --rm pytest pytest /app/test/python/ -v`
+5. Commit your changes (`git commit -m 'Add amazing feature'`)
+6. Push to the branch (`git push origin feature/amazing-feature`)
+7. Open a Pull Request
+
+## 📄 License
 
 See LICENSE file for details.
 
-I recommend you to deactivate the openAI api link so that you only get PersonaMate custom model and it is easier to access. Or simply deactivate models you won't use.
+## 🆘 Need Help?
+
+- 📖 Check [DEPLOYMENT.md](DEPLOYMENT.md) for troubleshooting
+- 💬 Open an issue on GitHub
+- 📊 View logs: `docker compose logs -f`
+
+---
+
+**Built with ❤️ using FastMCP, Neo4j, and OpenWebUI**
