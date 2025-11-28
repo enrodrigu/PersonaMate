@@ -40,6 +40,13 @@ jobs:
         docker compose logs neo4j --tail 20
         timeout 30 bash -c 'until docker exec personamate-neo4j cypher-shell -u neo4j -p personamate "RETURN 1" 2>/dev/null; do sleep 2; done' || echo "Neo4j might not be fully ready"
     
+    - name: Start MCP server
+      run: |
+        docker compose up -d mcp
+        echo "Waiting for MCP server to be ready..."
+        sleep 5
+        docker compose logs mcp --tail 20
+    
     - name: Run MCP integration tests
       run: |
         docker compose run --rm pytest pytest /app/test/python/test_mcp_integration.py -v
@@ -66,6 +73,7 @@ jobs:
       if: always()
       run: |
         docker compose down -v
+        docker compose logs mcp --tail 30 || true
         docker compose logs neo4j --tail 50 || true
 
   lint:

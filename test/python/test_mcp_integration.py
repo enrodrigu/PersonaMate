@@ -56,7 +56,7 @@ async def test_mcp_server_initialization():
             
             # Server should respond with initialization result
             assert result is not None
-            assert result.protocol_version is not None
+            assert result.protocolVersion is not None
 
 
 @pytest.mark.asyncio

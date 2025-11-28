@@ -43,7 +43,11 @@ docker compose up -d neo4j
 # Wait for Neo4j to initialize
 sleep 15
 
-# Run MCP tests
+# Start MCP server (required for MCP integration tests)
+docker compose up -d mcp
+sleep 5
+
+# Run MCP integration tests
 docker compose run --rm pytest pytest /app/test/python/test_mcp_integration.py -v
 
 # Run tool tests

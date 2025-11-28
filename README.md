@@ -2,6 +2,10 @@
 
 PersonaMate is a personal knowledge graph assistant that uses AI and Model Context Protocol (MCP) to manage personal contact data and relationships. The project exposes an **MCP server** using FastMCP that integrates with OpenWebUI for a complete AI assistant experience.
 
+![CI/CD Pipeline](https://github.com/enrodrigu/PersonaMate/workflows/CI%2FCD%20Pipeline/badge.svg)
+[![codecov](https://codecov.io/gh/enrodrigu/PersonaMate/branch/main/graph/badge.svg)](https://codecov.io/gh/enrodrigu/PersonaMate)
+
+
 ## Architecture
 
 ### Core Components
