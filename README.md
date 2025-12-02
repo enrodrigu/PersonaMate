@@ -23,7 +23,7 @@ chmod +x deploy.sh && ./deploy.sh
 - **Full Stack**: MCP + Neo4j + OpenWebUI (complete chat interface at http://localhost:3000)
 - **MCP Only**: MCP + Neo4j (for custom integrations at http://localhost:8080/sse)
 
-📖 **Need more details?** See [QUICKSTART.md](QUICKSTART.md) for quick reference or [DEPLOYMENT.md](DEPLOYMENT.md) for comprehensive guide.
+📖 **Need more details?** See [Quick Start](docs/quickstart.md) for quick reference or [Deployment Guide](docs/deployment.md) for comprehensive guide.
 
 ---
 
@@ -49,7 +49,7 @@ PersonaMate exposes its functionality through the Model Context Protocol:
 
 **Resources**:
 - `graph://persons`: List all persons
-- `graph://relationships`: List all relationships  
+- `graph://relationships`: List all relationships
 - `graph://stats`: Graph statistics
 
 **Prompts**:
@@ -117,7 +117,7 @@ docker compose up -d neo4j mcp
 | Neo4j Browser | http://localhost:7474 | neo4j / personamate |
 | Neo4j Bolt | bolt://localhost:7687 | neo4j / personamate |
 
-📖 **For detailed deployment instructions, troubleshooting, and advanced configuration**, see [DEPLOYMENT.md](DEPLOYMENT.md)
+📖 **For detailed deployment instructions, troubleshooting, and advanced configuration**, see [Deployment Guide](docs/deployment.md)
 
 ## 🎨 Using PersonaMate
 
@@ -194,7 +194,7 @@ docker compose logs mcp --tail 50
 docker compose build mcp && docker compose restart mcp
 ```
 
-📖 **For more troubleshooting help**, see [DEPLOYMENT.md](DEPLOYMENT.md#troubleshooting)
+📖 **For more troubleshooting help**, see [Deployment Guide - Troubleshooting](docs/deployment.md#troubleshooting)
 
 ## 💻 Development
 
@@ -218,7 +218,7 @@ docker compose run --rm pytest pytest /app/test/python/ -v --cov=/app/src/python
 
 **Test suite includes:**
 - ✅ 6 MCP integration tests
-- ✅ 14 tool implementation tests  
+- ✅ 14 tool implementation tests
 - ✅ Cross-tool workflow validation
 - ✅ Neo4j persistence checks
 
@@ -255,7 +255,7 @@ The project uses GitHub Actions for automated testing on every push/PR:
 - Code quality checks (flake8, black)
 - Coverage reporting
 
-📖 **See [.github/workflows/README.md](.github/workflows/README.md) for CI/CD documentation**
+📖 **See [CI/CD Pipeline](docs/workflows.md) for CI/CD documentation**
 
 ## 📁 Project Structure
 
@@ -297,21 +297,51 @@ PersonaMate/
 
 ## 📚 Documentation
 
-- **[QUICKSTART.md](QUICKSTART.md)** - Get started in 2 commands
-- **[DEPLOYMENT.md](DEPLOYMENT.md)** - Full deployment guide with troubleshooting
-- **[.github/workflows/README.md](.github/workflows/README.md)** - CI/CD pipeline documentation
-- **[DOCKER_README.md](DOCKER_README.md)** - Docker-specific documentation
+Full documentation is available in the `docs/` folder and can be viewed as a website:
+
+```bash
+# Install documentation dependencies
+pip install mkdocs mkdocs-material mkdocs-git-revision-date-localized-plugin
+
+# Serve documentation locally
+mkdocs serve
+
+# Open http://127.0.0.1:8000 in your browser
+```
+
+**Quick Links:**
+- **[Quick Start](docs/quickstart.md)** - Get started in 2 commands
+- **[Deployment Guide](docs/deployment.md)** - Full deployment with troubleshooting
+- **[Contributing Guide](docs/contributing.md)** - Development setup and guidelines
+- **[Testing Guide](docs/testing.md)** - Running and writing tests
+- **[CI/CD Pipeline](docs/workflows.md)** - GitHub Actions documentation
+- **[Project Structure](docs/structure.md)** - Codebase organization
+- **[MCP Protocol](docs/mcp.md)** - Model Context Protocol details
+- **[MCP Tools](docs/mcp/tools.md)** - Available MCP tools
+- **[MCP Resources](docs/mcp/resources.md)** - MCP resources and prompts
 
 ## 🤝 Contributing
 
-Contributions are welcome! Please:
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Make your changes with tests
-4. Run the test suite: `docker compose run --rm pytest pytest /app/test/python/ -v`
-5. Commit your changes (`git commit -m 'Add amazing feature'`)
-6. Push to the branch (`git push origin feature/amazing-feature`)
-7. Open a Pull Request
+Contributions are welcome! We use automated code formatting to maintain consistent style.
+
+**Quick start:**
+```bash
+# Fork and clone the repo
+git clone https://github.com/YOUR_USERNAME/PersonaMate.git
+cd PersonaMate
+
+# Install pre-commit hooks (auto-formats on commit)
+pip install pre-commit && pre-commit install
+
+# Make your changes and commit
+# Code is automatically formatted by hooks or CI!
+```
+
+**Code will be auto-formatted:**
+- ✅ Locally with pre-commit hooks (recommended)
+- ✅ Automatically by CI when you push (if you skip hooks)
+
+📖 **See [Contributing Guide](docs/contributing.md) for detailed contribution guidelines, testing, and development setup.**
 
 ## 📄 License
 
@@ -319,9 +349,10 @@ See LICENSE file for details.
 
 ## 🆘 Need Help?
 
-- 📖 Check [DEPLOYMENT.md](DEPLOYMENT.md) for troubleshooting
+- 📖 Check [Deployment Guide](docs/deployment.md) for troubleshooting
 - 💬 Open an issue on GitHub
 - 📊 View logs: `docker compose logs -f`
+- 📚 Browse the [documentation](docs/)
 
 ---
 

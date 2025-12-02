@@ -9,11 +9,10 @@ import logging
 
 from dotenv import load_dotenv
 from fastmcp import FastMCP
-
+from tools.linkingTool import fetch_entity_context as _fetch_entity_context_tool
+from tools.linkingTool import link_elements as _link_elements_tool
 from tools.personalDataTool import fetch_person_data as _fetch_person_data_tool
 from tools.personalDataTool import update_person_data as _update_person_data_tool
-from tools.linkingTool import link_elements as _link_elements_tool
-from tools.linkingTool import fetch_entity_context as _fetch_entity_context_tool
 from utils.neo4j_graph import Neo4jGraph
 
 load_dotenv()
@@ -29,13 +28,14 @@ mcp = FastMCP("PersonaMate")
 # TOOLS - Expose existing PersonaMate tools through MCP
 # ============================================================================
 
+
 @mcp.tool()
 def fetch_person(name: str) -> str:
     """Fetch personal information about a person by name from the knowledge graph.
-    
+
     Args:
         name: The name of the person to look up
-        
+
     Returns:
         A JSON string containing the person's data and related graph context
     """
@@ -48,12 +48,12 @@ def fetch_person(name: str) -> str:
 @mcp.tool()
 def update_person(name: str, field: str, value: str) -> str:
     """Update a person's information in the knowledge graph.
-    
+
     Args:
         name: The name of the person to update
         field: The field/property to update (e.g., 'age', 'email', 'location')
         value: The new value for the field
-        
+
     Returns:
         Success message
     """
@@ -65,46 +65,38 @@ def update_person(name: str, field: str, value: str) -> str:
 @mcp.tool()
 def link_entities(element1: str, type1: str, element2: str, type2: str, linktype: str) -> str:
     """Create a relationship between two entities in the knowledge graph.
-    
+
     Args:
         element1: Name of the first entity
         type1: Type of the first entity (e.g., 'Person', 'Organization')
         element2: Name of the second entity
         type2: Type of the second entity
         linktype: Type of relationship (e.g., 'knows', 'likes', 'works_at')
-        
+
     Returns:
         Success message
     """
     logger.info(f"MCP tool invoked: link_entities({element1} -{linktype}-> {element2})")
-    result = _link_elements_tool.invoke({
-        "element1": element1,
-        "type1": type1,
-        "element2": element2,
-        "type2": type2,
-        "linktype": linktype
-    })
+    result = _link_elements_tool.invoke(
+        {"element1": element1, "type1": type1, "element2": element2, "type2": type2, "linktype": linktype}
+    )
     return result
 
 
 @mcp.tool()
 def get_entity_context(name: str, entity_type: str = "Person", depth: int = 1) -> str:
     """Get rich context about an entity including its relationships in the graph.
-    
+
     Args:
         name: Name of the entity
         entity_type: Type of entity (default: 'Person')
         depth: How many hops to traverse (default: 1)
-        
+
     Returns:
         JSON string with nodes, edges, and a human-readable summary
     """
     logger.info(f"MCP tool invoked: get_entity_context(name={name}, type={entity_type}, depth={depth})")
-    result = _fetch_entity_context_tool.invoke({
-        "name": name,
-        "type": entity_type,
-        "depth": depth
-    })
+    result = _fetch_entity_context_tool.invoke({"name": name, "type": entity_type, "depth": depth})
     return result
 
 
@@ -112,10 +104,11 @@ def get_entity_context(name: str, entity_type: str = "Person", depth: int = 1) -
 # RESOURCES - Provide read-only access to graph data
 # ============================================================================
 
+
 @mcp.resource("graph://persons")
 def list_all_persons() -> str:
     """List all persons in the knowledge graph.
-    
+
     Returns a list of all person names currently stored.
     """
     logger.info("MCP resource accessed: graph://persons")
@@ -139,7 +132,7 @@ def list_all_persons() -> str:
 @mcp.resource("graph://relationships")
 def list_all_relationships() -> str:
     """List all relationships in the knowledge graph.
-    
+
     Returns a summary of all edges/relationships.
     """
     logger.info("MCP resource accessed: graph://relationships")
@@ -147,8 +140,8 @@ def list_all_relationships() -> str:
     try:
         query = """
         MATCH (a)-[r]->(b)
-        RETURN labels(a)[0] as type1, a.name as name1, 
-               type(r) as rel, 
+        RETURN labels(a)[0] as type1, a.name as name1,
+               type(r) as rel,
                labels(b)[0] as type2, b.name as name2
         LIMIT 100
         """
@@ -175,7 +168,7 @@ def list_all_relationships() -> str:
 @mcp.resource("graph://stats")
 def graph_statistics() -> str:
     """Get statistics about the knowledge graph.
-    
+
     Returns counts of nodes and relationships by type.
     """
     logger.info("MCP resource accessed: graph://stats")
@@ -184,21 +177,17 @@ def graph_statistics() -> str:
         stats = []
         with graph._driver.session(database=graph._database) as session:
             # Count nodes by label
-            node_counts = session.run(
-                "MATCH (n) RETURN labels(n)[0] as label, count(*) as count ORDER BY count DESC"
-            )
+            node_counts = session.run("MATCH (n) RETURN labels(n)[0] as label, count(*) as count ORDER BY count DESC")
             stats.append("=== Node Counts ===")
             for record in node_counts:
                 stats.append(f"{record['label']}: {record['count']}")
-            
+
             # Count relationships by type
-            rel_counts = session.run(
-                "MATCH ()-[r]->() RETURN type(r) as type, count(*) as count ORDER BY count DESC"
-            )
+            rel_counts = session.run("MATCH ()-[r]->() RETURN type(r) as type, count(*) as count ORDER BY count DESC")
             stats.append("\n=== Relationship Counts ===")
             for record in rel_counts:
                 stats.append(f"{record['type']}: {record['count']}")
-                
+
         return "\n".join(stats) if len(stats) > 2 else "Graph is empty"
     except Exception as e:
         logger.error(f"Error getting graph stats: {e}")
@@ -214,10 +203,11 @@ def graph_statistics() -> str:
 # PROMPTS - Provide reusable prompt templates
 # ============================================================================
 
+
 @mcp.prompt()
 def person_lookup_prompt(name: str) -> str:
     """Generate a prompt for looking up comprehensive information about a person.
-    
+
     Args:
         name: Name of the person to look up
     """
@@ -235,7 +225,7 @@ Format the response as:
 @mcp.prompt()
 def relationship_analysis_prompt(person1: str, person2: str) -> str:
     """Generate a prompt for analyzing relationships between two people.
-    
+
     Args:
         person1: First person's name
         person2: Second person's name

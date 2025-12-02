@@ -1,8 +1,8 @@
-import unicodedata
-import re
 import json
-from langchain_core.tools import tool
+import re
+import unicodedata
 
+from langchain_core.tools import tool
 from utils.neo4j_graph import Neo4jGraph
 
 
@@ -38,9 +38,7 @@ def fetch_person_data(name: str) -> str:
     try:
         # Perform case-insensitive lookup by comparing normalized forms
         # We store and compare against the original `name` property but match using toLower
-        query = (
-            "MATCH (p:Person) WHERE toLower(p.name) = $lower RETURN p LIMIT 1"
-        )
+        query = "MATCH (p:Person) WHERE toLower(p.name) = $lower RETURN p LIMIT 1"
         with g._driver.session(database=g._database) as session:
             rec = session.run(query, lower=name.lower()).single()
             if rec:
@@ -77,13 +75,15 @@ def fetch_person_data(name: str) -> str:
 
 
 @tool
-def update_person_data(name: str,
-                       age: int = None,
-                       email: str = None,
-                       street: str = None,
-                       city: str = None,
-                       state: str = None,
-                       zip: str = None) -> str:
+def update_person_data(
+    name: str,
+    age: int = None,
+    email: str = None,
+    street: str = None,
+    city: str = None,
+    state: str = None,
+    zip: str = None,
+) -> str:
     """Create or update a Person node in Neo4j with the provided properties.
 
     Address fields are stored as a map in the `address` property.

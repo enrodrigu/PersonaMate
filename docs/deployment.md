@@ -42,7 +42,7 @@ PersonaMate offers two deployment modes to suit different use cases:
    ```powershell
    # Full stack with OpenWebUI
    .\deploy.ps1 -Mode full
-   
+
    # MCP-only deployment
    .\deploy.ps1 -Mode mcp-only
    ```
@@ -64,7 +64,7 @@ PersonaMate offers two deployment modes to suit different use cases:
    ```bash
    # Full stack with OpenWebUI
    ./deploy.sh full
-   
+
    # MCP-only deployment
    ./deploy.sh mcp-only
    ```
@@ -199,12 +199,12 @@ services:
   mcp:
     ports:
       - "8080:8080"  # Change first number for custom external port
-  
+
   neo4j:
     ports:
       - "7474:7474"  # HTTP
       - "7687:7687"  # Bolt
-  
+
   openwebui:
     ports:
       - "3000:8080"  # Change first number for custom external port

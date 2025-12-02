@@ -65,14 +65,22 @@ def fetch_entity_context(name: str, type: str = "Person", depth: int = 1) -> str
             n_labels = n.get("labels") or []
             n_type = n_labels[0] if n_labels else "Unknown"
             if n.get("direction") == "out":
-                edges.append({"from": {"name": cur_name, "type": cur_type},
-                              "to": {"name": n_name, "type": n_type},
-                              "rel": n.get("rel")})
+                edges.append(
+                    {
+                        "from": {"name": cur_name, "type": cur_type},
+                        "to": {"name": n_name, "type": n_type},
+                        "rel": n.get("rel"),
+                    }
+                )
                 neighbor_key = (n_name, n_type)
             else:
-                edges.append({"from": {"name": n_name, "type": n_type},
-                              "to": {"name": cur_name, "type": cur_type},
-                              "rel": n.get("rel")})
+                edges.append(
+                    {
+                        "from": {"name": n_name, "type": n_type},
+                        "to": {"name": cur_name, "type": cur_type},
+                        "rel": n.get("rel"),
+                    }
+                )
                 neighbor_key = (n_name, n_type)
 
             if neighbor_key not in visited and cur_depth + 1 <= depth:

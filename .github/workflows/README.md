@@ -17,9 +17,14 @@ Runs all automated tests in Docker environment:
 - Environment variables must be set via GitHub Secrets
 
 ### 2. Lint Job
-Code quality checks:
+Code quality and auto-formatting:
 - **flake8**: Checks for syntax errors and code style issues
-- **black**: Verifies Python code formatting (120 char line length)
+- **black**: Auto-formats Python code (120 char line length)
+- **Auto-commit**: Automatically commits formatting changes on push events
+
+**Auto-formatting behavior:**
+- On `push`: Formats code and commits changes automatically with `[skip ci]` tag
+- On `pull_request`: Formats code but does not commit (shows what needs formatting)
 
 ### 3. Build Job
 Only runs on `main` branch pushes after tests pass:
@@ -27,12 +32,48 @@ Only runs on `main` branch pushes after tests pass:
 - Performs smoke test of services
 - Validates deployment readiness
 
+## Code Formatting
+
+### Automatic Formatting (CI/CD)
+The pipeline automatically formats code using black when you push to the repository. Formatted code is committed back with the message: `style: auto-format code with black [skip ci]`
+
+### Local Formatting (Pre-commit Hooks)
+
+**Setup pre-commit hooks** (recommended for contributors):
+```bash
+# Install pre-commit
+pip install pre-commit
+
+# Install the git hooks
+pre-commit install
+
+# Now hooks run automatically on git commit
+```
+
+**Manual formatting**:
+```bash
+# Format all Python files
+black src/python test/python --line-length=120
+
+# Check what would be formatted without changing files
+black src/python test/python --line-length=120 --check
+
+# Run all pre-commit hooks manually
+pre-commit run --all-files
+```
+
+### Formatting Rules
+- Line length: 120 characters
+- Style: Black default (PEP 8 compliant)
+- Import sorting: isort with black profile
+- Trailing whitespace: Removed automatically
+- End of file: Single newline enforced
+
 ## Required GitHub Secrets
 
 Add these secrets in your repository settings (`Settings` → `Secrets and variables` → `Actions`):
 
 - `OPENAI_API_KEY`: Your OpenAI API key for LLM functionality
-- `LANGCHAIN_API_KEY`: (Optional) LangChain tracing API key
 
 ## Running Tests Locally
 
@@ -92,4 +133,3 @@ If tests fail with `ServiceUnavailable` errors:
 3. **Keep tests fast**: Use module-scoped fixtures to reduce setup time
 4. **Monitor coverage**: Aim for >80% code coverage
 5. **Fix lint issues**: Run `black` and `flake8` before committing
-

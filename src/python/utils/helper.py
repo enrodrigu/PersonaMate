@@ -2,7 +2,6 @@ import logging
 
 from langchain_core.messages import ToolMessage
 from langchain_core.runnables import RunnableLambda
-
 from langgraph.prebuilt import ToolNode
 
 logger = logging.getLogger("personamate.utils")
@@ -29,9 +28,7 @@ def handle_tool_error(state) -> dict:
 
 
 def create_tool_node_with_fallback(tools: list) -> dict:
-    return ToolNode(tools).with_fallbacks(
-        [RunnableLambda(handle_tool_error)], exception_key="error"
-    )
+    return ToolNode(tools).with_fallbacks([RunnableLambda(handle_tool_error)], exception_key="error")
 
 
 def _print_event(event: dict, _printed: set, max_length=1500):
