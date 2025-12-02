@@ -1,12 +1,12 @@
-import time
 import os
-import pytest
+import time
 
 from utils.neo4j_graph import Neo4jGraph
 
 
 def wait_for_neo4j(uri, user, password, timeout=60):
     from neo4j import GraphDatabase
+
     start = time.time()
     while time.time() - start < timeout:
         try:
@@ -46,7 +46,9 @@ def test_neo4j_graph_basic_crud():
 
     neighbors = g.get_neighbors(a, "Person")
     # look for an outgoing KNOWS relationship to b
-    found = any(n["direction"] == "out" and (n["rel"] == "KNOWS" or n["rel"] == "knows") and n["name"] == b for n in neighbors)
+    found = any(
+        n["direction"] == "out" and (n["rel"] == "KNOWS" or n["rel"] == "knows") and n["name"] == b for n in neighbors
+    )
     assert found, f"Expected outgoing KNOWS relationship from {a} to {b}; neighbors: {neighbors}"
 
     # cleanup

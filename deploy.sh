@@ -30,7 +30,7 @@ print_warning() {
 
 check_prerequisites() {
     print_step "Checking prerequisites..."
-    
+
     # Check Docker
     if command -v docker &> /dev/null; then
         DOCKER_VERSION=$(docker --version)
@@ -40,7 +40,7 @@ check_prerequisites() {
         echo "Please install Docker from: https://docs.docker.com/get-docker/"
         exit 1
     fi
-    
+
     # Check Docker Compose
     if docker compose version &> /dev/null; then
         COMPOSE_VERSION=$(docker compose version)
@@ -49,7 +49,7 @@ check_prerequisites() {
         print_error "Docker Compose is not available"
         exit 1
     fi
-    
+
     # Check if Docker daemon is running
     if docker ps &> /dev/null; then
         print_success "Docker daemon is running"
@@ -58,7 +58,7 @@ check_prerequisites() {
         echo "Please start Docker"
         exit 1
     fi
-    
+
     # Check .env file
     if [ -f ".env" ]; then
         print_success ".env file found"
@@ -89,12 +89,12 @@ show_menu() {
     echo "  3) Exit"
     echo ""
     read -p "Enter your choice (1-3): " choice
-    
+
     case $choice in
         1) DEPLOY_MODE="full" ;;
         2) DEPLOY_MODE="mcp-only" ;;
         3) echo "Deployment cancelled"; exit 0 ;;
-        *) 
+        *)
             print_error "Invalid choice. Please enter 1, 2, or 3"
             show_menu
             ;;
@@ -124,7 +124,7 @@ show_configuration() {
 deploy_services() {
     print_step "Stopping any existing services..."
     docker compose down 2>/dev/null || true
-    
+
     print_step "Building images..."
     if docker compose build mcp; then
         print_success "MCP image built successfully"
@@ -132,15 +132,15 @@ deploy_services() {
         print_error "Failed to build MCP image"
         exit 1
     fi
-    
+
     print_step "Starting services..."
-    
+
     if [ "$DEPLOY_MODE" == "full" ]; then
         docker compose up -d neo4j mcp openwebui
     else
         docker compose up -d neo4j mcp
     fi
-    
+
     if [ $? -eq 0 ]; then
         print_success "Services started successfully"
     else
@@ -152,15 +152,15 @@ deploy_services() {
 
 wait_for_services() {
     print_step "Waiting for services to be ready..."
-    
+
     # Wait for Neo4j
     echo -n "  Waiting for Neo4j..."
     sleep 10
-    
+
     MAX_ATTEMPTS=30
     ATTEMPT=0
     NEO4J_READY=false
-    
+
     while [ $ATTEMPT -lt $MAX_ATTEMPTS ] && [ "$NEO4J_READY" = false ]; do
         if docker exec personamate-neo4j cypher-shell -u neo4j -p personamate "RETURN 1" &>/dev/null; then
             NEO4J_READY=true
@@ -171,16 +171,16 @@ wait_for_services() {
             echo -n "."
         fi
     done
-    
+
     if [ "$NEO4J_READY" = false ]; then
         print_warning "\n  Neo4j might not be fully ready yet"
     fi
-    
+
     # Wait for MCP
     echo -n "  Waiting for MCP Server..."
     sleep 5
     echo -e " ${GREEN}Ready!${NC}"
-    
+
     if [ "$DEPLOY_MODE" == "full" ]; then
         echo -n "  Waiting for OpenWebUI..."
         sleep 10
@@ -206,14 +206,14 @@ show_access_info() {
     echo "    • Username: neo4j"
     echo "    • Password: personamate"
     echo ""
-    
+
     if [ "$DEPLOY_MODE" == "full" ]; then
         echo -e "${CYAN}  OpenWebUI:${NC}"
         echo "    • URL: http://localhost:3000"
         echo "    • First time: Create an admin account"
         echo ""
     fi
-    
+
     echo -e "${YELLOW}Useful Commands:${NC}"
     echo "  • View logs:    docker compose logs -f"
     echo "  • Stop all:     docker compose down"
@@ -225,7 +225,7 @@ show_access_info() {
 show_next_steps() {
     echo -e "${CYAN}Next Steps:${NC}"
     echo ""
-    
+
     if [ "$DEPLOY_MODE" == "full" ]; then
         echo "  1. Open OpenWebUI at http://localhost:3000"
         echo "  2. Create your admin account"
@@ -237,7 +237,7 @@ show_next_steps() {
         echo "  2. Use the MCP protocol to interact with PersonaMate"
         echo "  3. Access Neo4j browser to view your knowledge graph"
     fi
-    
+
     echo ""
     echo "For more information, see README.md"
     echo ""
@@ -251,8 +251,8 @@ cat << "EOF"
 
   ██████╗ ███████╗██████╗ ███████╗ ██████╗ ███╗   ██╗ █████╗ ███╗   ███╗ █████╗ ████████╗███████╗
   ██╔══██╗██╔════╝██╔══██╗██╔════╝██╔═══██╗████╗  ██║██╔══██╗████╗ ████║██╔══██╗╚══██╔══╝██╔════╝
-  ██████╔╝█████╗  ██████╔╝███████╗██║   ██║██╔██╗ ██║███████║██╔████╔██║███████║   ██║   █████╗  
-  ██╔═══╝ ██╔══╝  ██╔══██╗╚════██║██║   ██║██║╚██╗██║██╔══██║██║╚██╔╝██║██╔══██║   ██║   ██╔══╝  
+  ██████╔╝█████╗  ██████╔╝███████╗██║   ██║██╔██╗ ██║███████║██╔████╔██║███████║   ██║   █████╗
+  ██╔═══╝ ██╔══╝  ██╔══██╗╚════██║██║   ██║██║╚██╗██║██╔══██║██║╚██╔╝██║██╔══██║   ██║   ██╔══╝
   ██║     ███████╗██║  ██║███████║╚██████╔╝██║ ╚████║██║  ██║██║ ╚═╝ ██║██║  ██║   ██║   ███████╗
   ╚═╝     ╚══════╝╚═╝  ╚═╝╚══════╝ ╚═════╝ ╚═╝  ╚═══╝╚═╝  ╚═╝╚═╝     ╚═╝╚═╝  ╚═╝   ╚═╝   ╚══════╝
 

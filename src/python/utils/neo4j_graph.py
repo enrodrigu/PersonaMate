@@ -1,5 +1,6 @@
-from neo4j import GraphDatabase
 import os
+
+from neo4j import GraphDatabase
 
 
 class Neo4jGraph:
@@ -30,9 +31,7 @@ class Neo4jGraph:
         self._driver.close()
 
     def add_node(self, type: str, name: str):
-        query = (
-            f"MERGE (n:`{type}` {{name: $name}}) RETURN id(n) as id, labels(n) as labels, n.name as name"
-        )
+        query = f"MERGE (n:`{type}` {{name: $name}}) RETURN id(n) as id, labels(n) as labels, n.name as name"
         with self._driver.session(database=self._database) as session:
             result = session.run(query, name=name)
             return result.single()
@@ -84,20 +83,25 @@ class Neo4jGraph:
         neighbors = []
         with self._driver.session(database=self._database) as session:
             for rec in session.run(out_q, **params):
-                neighbors.append({
-                    "direction": "out",
-                    "rel": rec.get("rel"),
-                    "name": rec.get("name"),
-                    "labels": rec.get("labels") or [],
-                })
+                neighbors.append(
+                    {
+                        "direction": "out",
+                        "rel": rec.get("rel"),
+                        "name": rec.get("name"),
+                        "labels": rec.get("labels") or [],
+                    }
+                )
             for rec in session.run(in_q, **params):
-                neighbors.append({
-                    "direction": "in",
-                    "rel": rec.get("rel"),
-                    "name": rec.get("name"),
-                    "labels": rec.get("labels") or [],
-                })
+                neighbors.append(
+                    {
+                        "direction": "in",
+                        "rel": rec.get("rel"),
+                        "name": rec.get("name"),
+                        "labels": rec.get("labels") or [],
+                    }
+                )
         return neighbors
+
     # Compatibility helpers used in code that expects save/load on mpg
     def save(self, filename: str = None):
         # No-op: Neo4j persists data for us

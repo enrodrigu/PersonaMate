@@ -204,11 +204,11 @@ server_params = StdioServerParameters(
 async with stdio_client(server_params) as (read, write):
     async with ClientSession(read, write) as session:
         await session.initialize()
-        
+
         # Call a tool
         result = await session.call_tool("fetch_person", {"name": "Alice"})
         print(result.content[0].text)
-        
+
         # Read a resource
         result = await session.read_resource("graph://stats")
         print(result.contents[0].text)

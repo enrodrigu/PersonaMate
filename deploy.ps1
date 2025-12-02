@@ -49,7 +49,7 @@ function Write-Warning-Message($message) {
 
 function Test-Prerequisites {
     Write-Step "Checking prerequisites..."
-    
+
     # Check Docker
     try {
         $dockerVersion = docker --version 2>$null
@@ -63,7 +63,7 @@ function Test-Prerequisites {
         Write-Host "Please install Docker Desktop from: https://www.docker.com/products/docker-desktop"
         exit 1
     }
-    
+
     # Check Docker Compose
     try {
         $composeVersion = docker compose version 2>$null
@@ -76,7 +76,7 @@ function Test-Prerequisites {
         Write-Error-Message "Docker Compose is not available"
         exit 1
     }
-    
+
     # Check if Docker is running
     try {
         docker ps > $null 2>&1
@@ -90,7 +90,7 @@ function Test-Prerequisites {
         Write-Host "Please start Docker Desktop"
         exit 1
     }
-    
+
     # Check .env file
     if (Test-Path ".env") {
         Write-Success ".env file found"
@@ -120,15 +120,15 @@ function Get-DeploymentMode {
     Write-Host ""
     Write-Host "  3) Exit"
     Write-Host ""
-    
+
     $choice = Read-Host "Enter your choice (1-3)"
-    
+
     switch ($choice) {
         "1" { return "full" }
         "2" { return "mcp-only" }
-        "3" { 
+        "3" {
             Write-Host "Deployment cancelled"
-            exit 0 
+            exit 0
         }
         default {
             Write-Error-Message "Invalid choice. Please enter 1, 2, or 3"
@@ -156,7 +156,7 @@ function Show-Configuration($mode) {
 function Deploy-Services($mode) {
     Write-Step "Stopping any existing services..."
     docker compose down 2>$null
-    
+
     Write-Step "Building images..."
     docker compose build mcp
     if ($LASTEXITCODE -ne 0) {
@@ -164,35 +164,35 @@ function Deploy-Services($mode) {
         exit 1
     }
     Write-Success "MCP image built successfully"
-    
+
     Write-Step "Starting services..."
-    
+
     if ($mode -eq "full") {
         docker compose up -d neo4j mcp openwebui
     } else {
         docker compose up -d neo4j mcp
     }
-    
+
     if ($LASTEXITCODE -ne 0) {
         Write-Error-Message "Failed to start services"
         docker compose logs --tail 50
         exit 1
     }
-    
+
     Write-Success "Services started successfully"
 }
 
 function Wait-ForServices($mode) {
     Write-Step "Waiting for services to be ready..."
-    
+
     # Wait for Neo4j
     Write-Host "  Waiting for Neo4j..." -NoNewline
     Start-Sleep -Seconds 10
-    
+
     $maxAttempts = 30
     $attempt = 0
     $neo4jReady = $false
-    
+
     while ($attempt -lt $maxAttempts -and -not $neo4jReady) {
         try {
             $result = docker exec personamate-neo4j cypher-shell -u neo4j -p personamate "RETURN 1" 2>$null
@@ -206,16 +206,16 @@ function Wait-ForServices($mode) {
             Write-Host "." -NoNewline
         }
     }
-    
+
     if (-not $neo4jReady) {
         Write-Warning-Message "`n  Neo4j might not be fully ready yet"
     }
-    
+
     # Wait for MCP
     Write-Host "  Waiting for MCP Server..." -NoNewline
     Start-Sleep -Seconds 5
     Write-ColorOutput $successColor " Ready!"
-    
+
     if ($mode -eq "full") {
         Write-Host "  Waiting for OpenWebUI..." -NoNewline
         Start-Sleep -Seconds 10
@@ -241,14 +241,14 @@ function Show-AccessInfo($mode) {
     Write-Host "    • Username: neo4j"
     Write-Host "    • Password: personamate"
     Write-Host ""
-    
+
     if ($mode -eq "full") {
         Write-ColorOutput $infoColor "  OpenWebUI:"
         Write-Host "    • URL: http://localhost:3000"
         Write-Host "    • First time: Create an admin account"
         Write-Host ""
     }
-    
+
     Write-ColorOutput $warningColor "Useful Commands:"
     Write-Host "  • View logs:    docker compose logs -f"
     Write-Host "  • Stop all:     docker compose down"
@@ -260,7 +260,7 @@ function Show-AccessInfo($mode) {
 function Show-NextSteps($mode) {
     Write-ColorOutput $infoColor "Next Steps:"
     Write-Host ""
-    
+
     if ($mode -eq "full") {
         Write-Host "  1. Open OpenWebUI at http://localhost:3000"
         Write-Host "  2. Create your admin account"
@@ -272,7 +272,7 @@ function Show-NextSteps($mode) {
         Write-Host "  2. Use the MCP protocol to interact with PersonaMate"
         Write-Host "  3. Access Neo4j browser to view your knowledge graph"
     }
-    
+
     Write-Host ""
     Write-Host "For more information, see README.md"
     Write-Host ""
@@ -285,8 +285,8 @@ Write-ColorOutput $infoColor @"
 
   ██████╗ ███████╗██████╗ ███████╗ ██████╗ ███╗   ██╗ █████╗ ███╗   ███╗ █████╗ ████████╗███████╗
   ██╔══██╗██╔════╝██╔══██╗██╔════╝██╔═══██╗████╗  ██║██╔══██╗████╗ ████║██╔══██╗╚══██╔══╝██╔════╝
-  ██████╔╝█████╗  ██████╔╝███████╗██║   ██║██╔██╗ ██║███████║██╔████╔██║███████║   ██║   █████╗  
-  ██╔═══╝ ██╔══╝  ██╔══██╗╚════██║██║   ██║██║╚██╗██║██╔══██║██║╚██╔╝██║██╔══██║   ██║   ██╔══╝  
+  ██████╔╝█████╗  ██████╔╝███████╗██║   ██║██╔██╗ ██║███████║██╔████╔██║███████║   ██║   █████╗
+  ██╔═══╝ ██╔══╝  ██╔══██╗╚════██║██║   ██║██║╚██╗██║██╔══██║██║╚██╔╝██║██╔══██║   ██║   ██╔══╝
   ██║     ███████╗██║  ██║███████║╚██████╔╝██║ ╚████║██║  ██║██║ ╚═╝ ██║██║  ██║   ██║   ███████╗
   ╚═╝     ╚══════╝╚═╝  ╚═╝╚══════╝ ╚═════╝ ╚═╝  ╚═══╝╚═╝  ╚═╝╚═╝     ╚═╝╚═╝  ╚═╝   ╚═╝   ╚══════╝
 

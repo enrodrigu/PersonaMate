@@ -1,0 +1,95 @@
+site_name: PersonaMate Documentation
+site_description: Personal knowledge graph assistant using AI and Model Context Protocol (MCP)
+site_author: PersonaMate Contributors
+site_url: https://enrodrigu.github.io/PersonaMate/
+
+repo_name: enrodrigu/PersonaMate
+repo_url: https://github.com/enrodrigu/PersonaMate
+edit_uri: edit/main/docs/
+
+theme:
+  name: material
+  palette:
+    # Light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    # Dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  font:
+    text: Roboto
+    code: Roboto Mono
+  features:
+    - navigation.instant
+    - navigation.tracking
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+    - content.code.annotate
+  icon:
+    repo: fontawesome/brands/github
+
+plugins:
+  - search
+  - git-revision-date-localized:
+      enable_creation_date: true
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - codehilite
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.details
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - toc:
+      permalink: true
+
+nav:
+  - Home: index.md
+  - Getting Started:
+    - Quick Start: quickstart.md
+    - Deployment Guide: deployment.md
+    - Docker Setup: docker.md
+  - Development:
+    - Contributing: contributing.md
+    - CI/CD Pipeline: workflows.md
+    - Testing: testing.md
+  - Architecture:
+    - MCP Protocol: mcp.md
+    - Project Structure: structure.md
+  - MCP Reference:
+    - Tools: mcp/tools.md
+    - Resources: mcp/resources.md
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/enrodrigu/PersonaMate
+  version:
+    provider: mike
+
+extra_css:
+  - stylesheets/extra.css
