@@ -3,8 +3,9 @@
 PersonaMate is a personal knowledge graph assistant that uses AI and Model Context Protocol (MCP) to manage personal contact data and relationships. The project exposes an **MCP server** using FastMCP that integrates with OpenWebUI for a complete AI assistant experience.
 
 ![CI/CD Pipeline](https://github.com/enrodrigu/PersonaMate/workflows/CI%2FCD%20Pipeline/badge.svg)
-[![codecov](https://codecov.io/gh/enrodrigu/PersonaMate/branch/main/graph/badge.svg)](https://codecov.io/gh/enrodrigu/PersonaMate)
-
+[![codecov](https://codecov.io/gh/enrodrigu/PersonaMate/graph/badge.svg?token=QZT60PTGYL)](https://codecov.io/gh/enrodrigu/PersonaMate)
+[![Documentation](https://img.shields.io/badge/docs-mkdocs-blue)](https://enrodrigu.github.io/PersonaMate/)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 ## 🚀 Quick Start
 
 Get PersonaMate running in minutes with our automated deployment script!
@@ -261,28 +262,42 @@ The project uses GitHub Actions for automated testing on every push/PR:
 
 ```
 PersonaMate/
-├── deploy.ps1                  # Windows deployment script
-├── deploy.sh                   # Linux/macOS deployment script
-├── QUICKSTART.md              # Quick reference guide
-├── DEPLOYMENT.md              # Comprehensive deployment guide
+├── .github/workflows/          # GitHub Actions CI/CD
+│   ├── ci.yml                 # Test, lint, docs validation
+│   └── docs.yml               # Documentation deployment
+├── docs/                      # MkDocs documentation
+│   ├── index.md              # Documentation home
+│   ├── quickstart.md         # Quick start guide
+│   ├── deployment.md         # Deployment guide
+│   ├── docker.md             # Docker documentation
+│   ├── contributing.md       # Contributing guidelines
+│   ├── workflows.md          # CI/CD pipeline docs
+│   ├── testing.md            # Testing guide
+│   ├── structure.md          # Project structure
+│   ├── mcp.md                # MCP protocol
+│   └── mcp/                  # MCP reference
+│       ├── tools.md          # MCP tools API
+│       └── resources.md      # MCP resources API
 ├── src/python/
-│   ├── mcp_server.py          # FastMCP server (main entry point)
-│   ├── fastmcp.json           # FastMCP configuration
+│   ├── mcp_server.py         # FastMCP server (main entry point)
+│   ├── fastmcp.json          # FastMCP configuration
 │   ├── tools/
 │   │   ├── personalDataTool.py # Person CRUD operations
 │   │   └── linkingTool.py      # Relationship management
 │   └── utils/
-│       ├── neo4j_graph.py     # Neo4j wrapper
-│       └── helper.py          # Utility functions
+│       ├── neo4j_graph.py    # Neo4j wrapper
+│       └── helper.py         # Utility functions
 ├── test/python/
-│   ├── test_mcp_integration.py # MCP protocol tests
-│   └── test_tools.py          # Tool implementation tests
-├── .github/workflows/
-│   ├── ci.yml                 # GitHub Actions pipeline
-│   └── README.md              # CI/CD documentation
+│   ├── test_mcp_integration.py # MCP protocol tests (6 tests)
+│   └── test_tools.py          # Tool implementation tests (14 tests)
+├── deploy.ps1                 # Windows deployment script
+├── deploy.sh                  # Linux/macOS deployment script
 ├── docker-compose.yml         # Docker services configuration
 ├── Dockerfile                 # MCP server container
-└── requirements.txt           # Python dependencies
+├── mkdocs.yml                 # Documentation site configuration
+├── .pre-commit-config.yaml    # Pre-commit hooks
+├── requirements.txt           # Python dependencies
+└── README.md                  # This file
 ```
 
 ## ✨ Key Features
@@ -297,7 +312,9 @@ PersonaMate/
 
 ## 📚 Documentation
 
-Full documentation is available in the `docs/` folder and can be viewed as a website:
+Full documentation is available at **[https://enrodrigu.github.io/PersonaMate/](https://enrodrigu.github.io/PersonaMate/)**
+
+### View Documentation Locally
 
 ```bash
 # Install documentation dependencies
@@ -309,16 +326,17 @@ mkdocs serve
 # Open http://127.0.0.1:8000 in your browser
 ```
 
-**Quick Links:**
-- **[Quick Start](docs/quickstart.md)** - Get started in 2 commands
-- **[Deployment Guide](docs/deployment.md)** - Full deployment with troubleshooting
-- **[Contributing Guide](docs/contributing.md)** - Development setup and guidelines
-- **[Testing Guide](docs/testing.md)** - Running and writing tests
-- **[CI/CD Pipeline](docs/workflows.md)** - GitHub Actions documentation
-- **[Project Structure](docs/structure.md)** - Codebase organization
-- **[MCP Protocol](docs/mcp.md)** - Model Context Protocol details
-- **[MCP Tools](docs/mcp/tools.md)** - Available MCP tools
-- **[MCP Resources](docs/mcp/resources.md)** - MCP resources and prompts
+### Documentation Contents
+
+- **[Quick Start](https://enrodrigu.github.io/PersonaMate/quickstart/)** - Get started in 2 commands
+- **[Deployment Guide](https://enrodrigu.github.io/PersonaMate/deployment/)** - Full deployment with troubleshooting
+- **[Contributing Guide](https://enrodrigu.github.io/PersonaMate/contributing/)** - Development setup and guidelines
+- **[Testing Guide](https://enrodrigu.github.io/PersonaMate/testing/)** - Running and writing tests
+- **[CI/CD Pipeline](https://enrodrigu.github.io/PersonaMate/workflows/)** - GitHub Actions documentation
+- **[Project Structure](https://enrodrigu.github.io/PersonaMate/structure/)** - Codebase organization
+- **[MCP Protocol](https://enrodrigu.github.io/PersonaMate/mcp/)** - Model Context Protocol details
+- **[MCP Tools](https://enrodrigu.github.io/PersonaMate/mcp/tools/)** - Available MCP tools
+- **[MCP Resources](https://enrodrigu.github.io/PersonaMate/mcp/resources/)** - MCP resources and prompts
 
 ## 🤝 Contributing
 
