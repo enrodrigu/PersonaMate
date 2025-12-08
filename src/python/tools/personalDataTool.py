@@ -28,7 +28,7 @@ def _normalize_name(name: str) -> str:
 def fetch_person_data(name: str) -> str:
     """Fetch personal information about a person by name from Neo4j.
 
-    Returns a dict with node properties and a `graph_context` key containing neighbor info.
+    Returns a JSON string with node properties and a `graph_context` key containing neighbor info.
     """
     if not name:
         return "Person not found"
@@ -66,7 +66,7 @@ def fetch_person_data(name: str) -> str:
         # Enrich with neighbors
         neighbors = g.get_neighbors(props.get("name"), "Person")
         props["graph_context"] = neighbors
-        return props
+        return json.dumps(props, indent=2)
     finally:
         try:
             g.close()
@@ -127,8 +127,9 @@ def update_person_data(
         with g._driver.session(database=g._database) as session:
             result = session.run(query, **params)
             # Consume the result to ensure transaction commits
-            result.single()
-        return "Person data updated"
+            node = result.single()
+            updated_props = dict(node["p"]) if node else {}
+        return json.dumps({"status": "success", "message": "Person data updated", "person": updated_props}, indent=2)
     finally:
         try:
             g.close()
