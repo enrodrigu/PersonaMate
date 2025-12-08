@@ -1,18 +1,17 @@
 """
 PersonaMate MCP Server using FastMCP.
 
-This server exposes PersonaMate tools and Neo4j graph context through the Model Context Protocol,
-allowing any MCP-compatible client (Claude Desktop, IDEs, etc.) to interact with the knowledge graph.
+This server exposes PersonaMate RAG tools through the Model Context Protocol,
+allowing any MCP-compatible client to interact with the knowledge graph.
 """
 
 import logging
 
 from dotenv import load_dotenv
 from fastmcp import FastMCP
-from tools.linkingTool import fetch_entity_context as _fetch_entity_context_tool
-from tools.linkingTool import link_elements as _link_elements_tool
-from tools.personalDataTool import fetch_person_data as _fetch_person_data_tool
-from tools.personalDataTool import update_person_data as _update_person_data_tool
+from tools.personalDataTool import ingest_document as _ingest_document_tool
+from tools.personalDataTool import rag_query as _rag_query_tool
+from tools.personalDataTool import update_entity as _update_entity_tool
 from utils.neo4j_graph import Neo4jGraph
 
 load_dotenv()
@@ -27,77 +26,68 @@ mcp = FastMCP("PersonaMate")
 # ============================================================================
 # TOOLS - Expose existing PersonaMate tools through MCP
 # ============================================================================
+# TOOLS - RAG Architecture Tools
+# ============================================================================
 
 
 @mcp.tool()
-def fetch_person(name: str) -> str:
-    """Fetch personal information about a person by name from the knowledge graph.
+def rag_query(query: str, entity_type: str = None, limit: int = 5) -> str:
+    """Retrieve information from the RAG system using semantic search.
 
     Args:
-        name: The name of the person to look up
+        query: Natural language query (e.g., "Python developers in Paris")
+        entity_type: Optional filter by type (Person, Organization, etc.)
+        limit: Maximum number of results (default: 5)
 
     Returns:
-        A JSON string containing the person's data and related graph context
+        JSON string with search results including entity data and relationships
     """
-    logger.info(f"MCP tool invoked: fetch_person(name={name})")
-    # The underlying tool is decorated with @tool from langchain, so we invoke it
-    result = _fetch_person_data_tool.invoke({"name": name})
+    logger.info(f"MCP tool invoked: rag_query(query={query}, type={entity_type})")
+    result = _rag_query_tool.invoke({"query": query, "entity_type": entity_type, "limit": limit})
     return result
 
 
 @mcp.tool()
-def update_person(name: str, field: str, value: str) -> str:
-    """Update a person's information in the knowledge graph.
+def ingest_document(text: str, entity_type: str, entity_name: str, metadata: str = None) -> str:
+    """Ingest a text document about people, organizations, or other entities.
 
     Args:
-        name: The name of the person to update
-        field: The field/property to update (e.g., 'age', 'email', 'location')
-        value: The new value for the field
+        text: Document text with entity information
+        entity_type: Type of entity (Person, Organization, Project, etc.)
+        entity_name: Name of the entity
+        metadata: Optional JSON string with metadata (tags, source, etc.)
 
     Returns:
-        Success message
+        JSON string with created entity_id and confirmation
     """
-    logger.info(f"MCP tool invoked: update_person(name={name}, field={field}, value={value})")
-    result = _update_person_data_tool.invoke({"name": name, "field": field, "value": value})
-    return result
-
-
-@mcp.tool()
-def link_entities(element1: str, type1: str, element2: str, type2: str, linktype: str) -> str:
-    """Create a relationship between two entities in the knowledge graph.
-
-    Args:
-        element1: Name of the first entity
-        type1: Type of the first entity (e.g., 'Person', 'Organization')
-        element2: Name of the second entity
-        type2: Type of the second entity
-        linktype: Type of relationship (e.g., 'knows', 'likes', 'works_at')
-
-    Returns:
-        Success message
-    """
-    logger.info(f"MCP tool invoked: link_entities({element1} -{linktype}-> {element2})")
-    result = _link_elements_tool.invoke(
-        {"element1": element1, "type1": type1, "element2": element2, "type2": type2, "linktype": linktype}
+    logger.info(f"MCP tool invoked: ingest_document({entity_name}, type={entity_type})")
+    result = _ingest_document_tool.invoke(
+        {"text": text, "entity_type": entity_type, "entity_name": entity_name, "metadata": metadata}
     )
     return result
 
 
 @mcp.tool()
-def get_entity_context(name: str, entity_type: str = "Person", depth: int = 1) -> str:
-    """Get rich context about an entity including its relationships in the graph.
+def update_entity(entity_id: str, content: str = None, metadata: str = None, add_relationship: str = None) -> str:
+    """Update an existing entity in the knowledge graph.
 
     Args:
-        name: Name of the entity
-        entity_type: Type of entity (default: 'Person')
-        depth: How many hops to traverse (default: 1)
+        entity_id: Unique entity identifier (e.g., "person:abc123")
+        content: Optional JSON string with content updates
+        metadata: Optional JSON string with metadata updates
+        add_relationship: Optional JSON with relationship info
 
     Returns:
-        JSON string with nodes, edges, and a human-readable summary
+        JSON string with updated entity data
     """
-    logger.info(f"MCP tool invoked: get_entity_context(name={name}, type={entity_type}, depth={depth})")
-    result = _fetch_entity_context_tool.invoke({"name": name, "type": entity_type, "depth": depth})
+    logger.info(f"MCP tool invoked: update_entity({entity_id})")
+    result = _update_entity_tool.invoke(
+        {"entity_id": entity_id, "content": content, "metadata": metadata, "add_relationship": add_relationship}
+    )
     return result
+
+
+# Note: link_entities and get_entity_context removed - use RAG tools instead
 
 
 # ============================================================================
