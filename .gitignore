@@ -5,8 +5,17 @@ data/
 *.vscode/
 *.pytest_cache/
 *.DS_Store
+.venv/
 
+# Coverage reports
+coverage.xml
+.coverage
+htmlcov/
+
+# Database storage directories
 neo4j/
+mongodb/
+qdrant/
 
 # MkDocs build output
 site/

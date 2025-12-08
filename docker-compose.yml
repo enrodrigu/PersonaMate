@@ -6,6 +6,8 @@ services:
       - "8080:8080"
     volumes:
       - ./src:/app/src
+      - ./examples:/app/examples
+      - ./test:/app/test
     env_file:
       - .env
     environment:
@@ -13,8 +15,13 @@ services:
       - NEO4J_URI=bolt://neo4j:7687
       - NEO4J_USER=neo4j
       - NEO4J_DB=neo4j
+      - MONGODB_URI=mongodb://mongodb:27017
+      - MONGODB_DB=personamate
+      - QDRANT_URI=http://qdrant:6333
     depends_on:
       - neo4j
+      - mongodb
+      - qdrant
     # Run MCP server with SSE transport for HTTP access
     command: ["fastmcp", "run", "/app/src/python/mcp_server.py", "--transport", "sse", "--port", "8080", "--host", "0.0.0.0"]
 
@@ -37,6 +44,7 @@ services:
     volumes:
       - ./src:/app/src
       - ./test:/app/test
+      - .:/app/output
     env_file:
       - .env
     environment:
@@ -44,11 +52,16 @@ services:
       - NEO4J_URI=bolt://neo4j:7687
       - NEO4J_USER=neo4j
       - NEO4J_DB=neo4j
+      - MONGODB_URI=mongodb://mongodb:27017
+      - MONGODB_DB=personamate
+      - QDRANT_HOST=qdrant
+      - QDRANT_PORT=6333
+      - QDRANT_URI=http://qdrant:6333
     depends_on:
       - neo4j
-    # Run the full utils test folder so both neo4j integration and smoke tests run
-    command: ["pytest", "-q", "/app/test/python/utils"]
-
+      - mongodb
+      - qdrant
+    command: ["pytest", "/app/test/python/", "-v"]
   neo4j:
     image: neo4j:5.9
     container_name: personamate-neo4j
@@ -63,3 +76,27 @@ services:
       - ./neo4j/logs:/logs
       - ./neo4j/import:/var/lib/neo4j/import
       - ./neo4j/plugins:/plugins
+
+  mongodb:
+    image: mongo:7.0
+    container_name: personamate-mongodb
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_DATABASE=personamate
+    volumes:
+      - ./mongodb/data:/data/db
+      - ./mongodb/logs:/var/log/mongodb
+    command: ["mongod", "--logpath", "/var/log/mongodb/mongod.log"]
+
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: personamate-qdrant
+    ports:
+      - "6333:6333"  # HTTP API
+      - "6334:6334"  # gRPC API
+    volumes:
+      - ./qdrant/storage:/qdrant/storage
+      - ./qdrant/snapshots:/qdrant/snapshots
+    environment:
+      - QDRANT__SERVICE__GRPC_PORT=6334

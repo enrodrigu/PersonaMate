@@ -54,37 +54,50 @@ jobs:
         NEO4J_USER=neo4j
         NEO4J_PASSWORD=personamate
         NEO4J_DB=neo4j
+        MONGODB_URI=mongodb://mongodb:27017
+        MONGODB_DB=personamate
+        QDRANT_HOST=qdrant
+        QDRANT_PORT=6333
+        QDRANT_URI=http://qdrant:6333
         EOF
 
-    - name: Start Neo4j service
+    - name: Start all services (Neo4j, MongoDB, Qdrant)
       run: |
-        docker compose up -d neo4j
-        echo "Waiting for Neo4j to be ready..."
+        docker compose up -d neo4j mongodb qdrant
+        echo "Waiting for services to be ready..."
         sleep 15
 
-    - name: Check Neo4j health
+    - name: Check service health
       run: |
+        echo "=== Neo4j logs ==="
         docker compose logs neo4j --tail 20
+        echo "=== MongoDB logs ==="
+        docker compose logs mongodb --tail 20
+        echo "=== Qdrant logs ==="
+        docker compose logs qdrant --tail 20
+        echo "=== Checking Neo4j connectivity ==="
         timeout 30 bash -c 'until docker exec personamate-neo4j cypher-shell -u neo4j -p personamate "RETURN 1" 2>/dev/null; do sleep 2; done' || echo "Neo4j might not be fully ready"
 
-    - name: Start MCP server
+    - name: Run unit tests (fast, mocked)
       run: |
-        docker compose up -d mcp
-        echo "Waiting for MCP server to be ready..."
-        sleep 5
-        docker compose logs mcp --tail 20
+        docker compose run --rm pytest pytest /app/test/python/test_embedding_pipeline.py /app/test/python/test_tools.py -v
 
     - name: Run MCP integration tests
       run: |
+        docker compose up -d mcp
+        echo "Waiting for MCP server..."
+        sleep 5
+        docker compose logs mcp --tail 20
         docker compose run --rm pytest pytest /app/test/python/test_mcp_integration.py -v
+        docker compose stop mcp
 
-    - name: Run tool implementation tests
+    - name: Run RAG architecture integration tests
       run: |
-        docker compose run --rm pytest pytest /app/test/python/test_tools.py -v
+        docker compose run --rm pytest pytest /app/test/python/test_rag_architecture.py -v
 
     - name: Run all tests with coverage
       run: |
-        docker compose run --rm pytest pytest /app/test/python/ --cov=/app/src/python --cov-branch --cov-report=xml --cov-report=term -v
+        docker compose run --rm pytest pytest /app/test/python/ --cov=/app/src/python --cov-branch --cov-report=xml:/app/output/coverage.xml --cov-report=term -v
 
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v4
@@ -100,7 +113,9 @@ jobs:
       run: |
         docker compose down -v
         docker compose logs mcp --tail 30 || true
-        docker compose logs neo4j --tail 50 || true
+        docker compose logs neo4j --tail 30 || true
+        docker compose logs mongodb --tail 30 || true
+        docker compose logs qdrant --tail 30 || true
 
   docs:
     runs-on: ubuntu-latest
