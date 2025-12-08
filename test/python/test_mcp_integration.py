@@ -85,10 +85,9 @@ async def test_mcp_list_tools():
             # Verify expected tools are present
             tool_names = [tool.name for tool in tools]
 
-            assert "fetch_person" in tool_names
-            assert "update_person" in tool_names
-            assert "link_entities" in tool_names
-            assert "get_entity_context" in tool_names
+            assert "rag_query" in tool_names
+            assert "update_entity" in tool_names
+            assert "ingest_document" in tool_names
 
 
 @pytest.mark.asyncio
