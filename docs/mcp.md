@@ -11,25 +11,14 @@ The MCP server (`src/python/mcp_server.py`) exposes:
 
 ## Architecture
 
-```
-┌─────────────────┐
-│  MCP Client     │  (Claude Desktop, IDEs, custom clients)
-│  (stdio/SSE)    │
-└────────┬────────┘
-         │
-         │ MCP Protocol
-         │
-┌────────▼────────┐
-│  FastMCP Server │  (src/python/mcp_server.py)
-│  Port 8080      │
-└────────┬────────┘
-         │
-         │ Neo4j Driver
-         │
-┌────────▼────────┐
-│    Neo4j DB     │  (Knowledge Graph)
-│  Port 7687      │
-└─────────────────┘
+```mermaid
+graph TB
+    A[MCP Client<br/>Claude Desktop, IDEs, custom clients<br/>stdio/SSE] -->|MCP Protocol| B[FastMCP Server<br/>src/python/mcp_server.py<br/>Port 8080]
+    B -->|Neo4j Driver| C[Neo4j DB<br/>Knowledge Graph<br/>Port 7687]
+
+    style A fill:#e1f5ff
+    style B fill:#fff4e1
+    style C fill:#e1ffe1
 ```
 
 ## Connection Methods

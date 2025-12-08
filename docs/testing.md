@@ -1,57 +1,499 @@
 # Testing Guide
 
-PersonaMate has comprehensive test coverage with automated tests for both MCP protocol integration and tool implementations.
+PersonaMate has comprehensive test coverage with unit tests, integration tests, and MCP protocol validation.
 
 ## Test Overview
 
-| Test Suite | Tests | Coverage | Purpose |
-|------------|-------|----------|---------|
-| MCP Integration | 6 tests | MCP protocol compliance | Validates server initialization, tool/resource listing, protocol conformance |
-| Tool Implementation | 14 tests | Tool functionality | Tests CRUD operations, relationships, cross-tool workflows |
-| **Total** | **20 tests** | **Full coverage** | End-to-end validation |
+| Test Suite | Type | Tests | Purpose |
+|------------|------|-------|---------|
+| Embedding Pipeline | Unit | 15+ | Chunk generation, pipeline orchestration |
+| RAG Architecture | Integration | 12+ | Full workflow across Neo4j/MongoDB/Qdrant |
+| Search & Embeddings | Integration | 20+ | Semantic search quality and ranking |
+| MCP Integration | Integration | 6 | MCP protocol compliance |
+| Tools | Unit | 14 | Tool functionality and workflows |
+| **Total** | **Mixed** | **67+** | **Complete RAG system validation** |
 
 ```mermaid
 graph TD
-    A[Test Suite] --> B[MCP Integration]
-    A --> C[Tool Implementation]
-    B --> D[Server Init]
-    B --> E[List Tools]
-    B --> F[List Resources]
-    B --> G[Call Tool]
-    B --> H[Read Resource]
-    C --> I[Personal Data]
-    C --> J[Linking]
-    C --> K[Cross-tool]
-    I --> L[CRUD Ops]
-    J --> M[Relationships]
-    K --> N[Workflows]
+    A[Test Suite] --> B[Unit Tests]
+    A --> C[Integration Tests]
+    B --> D[Embedding Pipeline]
+    B --> E[Tools]
+    C --> F[RAG Architecture]
+    C --> G[Search & Embeddings]
+    C --> H[MCP Protocol]
+    D --> I[Chunk Generation]
+    D --> J[Pipeline Methods]
+    F --> K[Neo4j + MongoDB + Qdrant]
+    G --> L[Semantic Search]
+    G --> M[Multi-level Strategy]
+    H --> N[Server Init]
+    H --> O[Tool/Resource Listing]
 ```
 
+## Test Files
+
+### Unit Tests
+
+#### 1. `test_embedding_pipeline.py`
+**Focus**: Chunk generation and embedding pipeline components (no services required).
+
+**Test Classes**:
+- `TestChunkGenerator`: Global/attribute chunk creation
+- `TestEmbeddingPipeline`: Entity processing with mocks
+- `TestChunkFormatting`: Text formatting for chunks
+
+**Run**:
+```bash
+pytest test/python/test_embedding_pipeline.py -v
+```
+
+#### 2. `test_tools.py`
+**Focus**: PersonaMate tool functions (mocked dependencies).
+
+**Run**:
+```bash
+pytest test/python/test_tools.py -v
+```
+
+---
+
+### Integration Tests
+
+#### 3. `test_rag_architecture.py` ⭐ NEW
+**Focus**: End-to-end RAG workflow across all three stores.
+
+**Prerequisites**: Neo4j, MongoDB, Qdrant running
+
+**Test Classes**:
+- `TestRAGArchitectureIntegration`: Create/store/retrieve flows
+- `TestEmbeddingPipelineIntegration`: Pipeline end-to-end
+- `TestDataConsistency`: Cross-store validation
+
+**Run**:
+```bash
+# Start services
+docker compose up -d neo4j mongodb qdrant
+
+# Run tests
+pytest test/python/test_rag_architecture.py -v -s
+```
+
+#### 4. `test_search_embeddings.py` ⭐ NEW
+**Focus**: Semantic search quality and embedding generation.
+
+**Prerequisites**: Qdrant running
+
+**Test Classes**:
+- `TestEmbeddingGeneration`: 384-dim embeddings, similarity
+- `TestChunkGeneration`: Chunk strategy validation
+- `TestSemanticSearch`: Search functionality and filters
+- `TestMultiLevelEmbeddings`: Global + attribute strategy
+- `TestSearchRanking`: Result relevance and scoring
+- `TestEmbeddingPersistence`: Storage and retrieval
+
+**Run**:
+```bash
+# Start Qdrant
+docker compose up -d qdrant
+
+# Run tests
+pytest test/python/test_search_embeddings.py -v -s
+```
+
+#### 5. `test_mcp_integration.py`
+**Focus**: MCP server protocol compliance.
+
+**Run**:
+```bash
+docker compose run --rm pytest pytest /app/test/python/test_mcp_integration.py -v
+```
+
+---
+
 ## Running Tests
+
+### Quick Test Scripts
+
+PersonaMate provides convenient scripts in the `scripts/` directory:
+
+**PowerShell (Windows):**
+```powershell
+# Unit Tests (fast, no services)
+.\scripts\run-unit-tests.ps1
+
+# RAG Architecture Tests (Neo4j + MongoDB + Qdrant)
+.\scripts\run-rag-tests.ps1
+
+# Search & Embeddings Tests (Qdrant + MongoDB)
+.\scripts\run-search-tests.ps1
+
+# Complete Test Suite (all tests with coverage)
+.\scripts\run-all-tests.ps1
+```
+
+**Bash (Linux/macOS):**
+```bash
+# Unit Tests (fast, no services)
+bash scripts/run-unit-tests.sh
+
+# RAG Architecture Tests (Neo4j + MongoDB + Qdrant)
+bash scripts/run-rag-tests.sh
+
+# Search & Embeddings Tests (Qdrant + MongoDB)
+bash scripts/run-search-tests.sh
+
+# Complete Test Suite (all tests with coverage)
+bash scripts/run-all-tests.sh
+
+# Original Integration Tests (Neo4j only)
+bash scripts/run-integration-tests.sh
+```
+
+---
+
+### Manual Test Execution
 
 ### Quick Test (All Tests)
 
 ```bash
-# Start services
-docker compose up -d neo4j mcp
+# Start all services
+docker compose up -d neo4j mongodb qdrant
 
-# Run all tests
-docker compose run --rm pytest pytest /app/test/python/ -v
+# Run complete test suite
+pytest test/python/ -v
+
+# With coverage report (XML for codecov.io)
+pytest test/python/ -v --cov=src/python --cov-report=xml --cov-report=term
 ```
 
-### Test by Suite
+### Test by Category
 
+**Unit Tests Only** (fast, no services):
 ```bash
-# MCP integration tests only (6 tests)
-docker compose run --rm pytest pytest /app/test/python/test_mcp_integration.py -v
-
-# Tool implementation tests only (14 tests)
-docker compose run --rm pytest pytest /app/test/python/test_tools.py -v
+pytest test/python/test_embedding_pipeline.py test/python/test_tools.py -v
 ```
 
-### Test with Coverage
-
+**Integration Tests** (require services):
 ```bash
+# Start services first
+docker compose up -d neo4j mongodb qdrant
+
+# Run integration tests
+pytest test/python/test_rag_architecture.py test/python/test_search_embeddings.py test/python/test_mcp_integration.py -v -s
+```
+
+**Search & Embedding Tests Only**:
+```bash
+pytest test/python/test_search_embeddings.py -v -s
+```
+
+**Specific Test Class**:
+```bash
+# Run only semantic search tests
+pytest test/python/test_search_embeddings.py::TestSemanticSearch -v
+
+# Run only RAG integration tests
+pytest test/python/test_rag_architecture.py::TestRAGArchitectureIntegration -v
+```
+
+---
+
+## Test Coverage
+
+### Generate Coverage Report
+```bash
+# XML report (for codecov.io)
+pytest test/python/ --cov=src/python --cov-report=xml
+
+# Terminal report
+pytest test/python/ --cov=src/python --cov-report=term
+
+# Upload to codecov.io
+curl -Os https://uploader.codecov.io/latest/linux/codecov
+chmod +x codecov
+./codecov -t ${CODECOV_TOKEN}
+```
+
+### Coverage Goals
+- **Embedding Pipeline**: >85% (chunk generation, pipeline logic)
+- **RAG Tools**: >75% (integration points)
+- **Search Logic**: >80% (semantic search, ranking)
+- **Overall Target**: >75%
+
+---
+
+## Test Data Management
+
+### Test Entity ID Convention
+All tests use `test:` prefix for entity IDs:
+```python
+entity_id = f"test:ml_engineer_{uuid4().hex[:8]}"
+```
+
+### Cleanup Test Data
+
+**Neo4j**:
+```cypher
+MATCH (n) WHERE n.id STARTS WITH 'test:' DETACH DELETE n
+```
+
+**MongoDB**:
+```javascript
+db.documents.deleteMany({ entity_id: /^test:/ })
+```
+
+**Qdrant**: Automatically cleaned by tests using `delete_entity_chunks()`.
+
+### Automated Cleanup Script
+```python
+# scripts/cleanup_test_data.py
+from src.python.utils.neo4j_graph import Neo4jGraph
+from src.python.utils.mongo_store import MongoStore
+
+neo4j = Neo4jGraph.load()
+mongo = MongoStore.load()
+
+neo4j._driver.execute_query(
+    "MATCH (n) WHERE n.id STARTS WITH 'test:' DETACH DELETE n"
+)
+
+mongo._db.documents.delete_many({"entity_id": {"$regex": "^test:"}})
+print("✓ Test data cleaned")
+```
+
+---
+
+## Test Environment Setup
+
+### 1. Install Dependencies
+```bash
+pip install pytest pytest-cov pytest-mock numpy
+```
+
+### 2. Start Services
+```bash
+# All services for full test suite
+docker compose up -d neo4j mongodb qdrant
+
+# Check health
+docker compose ps
+```
+
+### 3. Environment Variables
+```bash
+# Required for integration tests
+export NEO4J_URI=bolt://localhost:7687
+export NEO4J_PASSWORD=your_password
+export MONGODB_URI=mongodb://localhost:27017
+export QDRANT_HOST=localhost
+```
+
+---
+
+## Debugging Tests
+
+### Run with Verbose Output
+```bash
+pytest test/python/test_search_embeddings.py -v -s
+```
+
+### Run Single Test
+```bash
+pytest test/python/test_rag_architecture.py::TestRAGArchitectureIntegration::test_create_entity_across_all_stores -v -s
+```
+
+### Use Debugger
+```bash
+pytest test/python/test_embedding_pipeline.py --pdb
+```
+
+### Print Test Output
+```bash
+# Shows print() statements
+pytest test/python/ -v -s
+```
+
+---
+
+## CI/CD Integration
+
+### GitHub Actions Example
+```yaml
+name: Test Suite
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      neo4j:
+        image: neo4j:latest
+        env:
+          NEO4J_AUTH: neo4j/test_password
+        ports:
+          - 7687:7687
+
+      mongodb:
+        image: mongo:latest
+        ports:
+          - 27017:27017
+
+      qdrant:
+        image: qdrant/qdrant:latest
+        ports:
+          - 6333:6333
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt pytest pytest-cov
+
+      - name: Run tests
+        env:
+          NEO4J_URI: bolt://localhost:7687
+          NEO4J_PASSWORD: test_password
+          MONGODB_URI: mongodb://localhost:27017
+          QDRANT_HOST: localhost
+        run: pytest test/python/ -v --cov=src/python --cov-report=xml --cov-report=term
+
+      - name: Upload coverage to codecov.io
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./coverage.xml
+          fail_ci_if_error: true
+```
+
+---
+
+## Troubleshooting
+
+### Services Not Available
+```bash
+# Check service logs
+docker compose logs neo4j
+docker compose logs mongodb
+docker compose logs qdrant
+
+# Restart services
+docker compose restart
+```
+
+### Connection Timeouts
+```bash
+# Verify ports are accessible
+nc -zv localhost 7687  # Neo4j
+nc -zv localhost 27017 # MongoDB
+nc -zv localhost 6333  # Qdrant
+
+# Check firewall rules
+sudo ufw status  # Linux
+```
+
+### Import Errors
+```bash
+# Add src to PYTHONPATH
+export PYTHONPATH="${PYTHONPATH}:$(pwd)/src/python"
+
+# Or use pytest pythonpath
+pytest --pythonpath=src/python test/python/
+```
+
+### Slow Tests
+```bash
+# Skip integration tests
+pytest test/python/ -v --ignore=test/python/test_rag_architecture.py --ignore=test/python/test_search_embeddings.py
+
+# Run only unit tests
+pytest test/python/test_embedding_pipeline.py test/python/test_tools.py -v
+```
+
+---
+
+## Writing New Tests
+
+### Unit Test Template
+```python
+import pytest
+from unittest.mock import Mock, patch
+
+class TestYourFeature:
+    """Tests for YourFeature"""
+
+    @pytest.fixture
+    def mock_deps(self):
+        with patch('module.Dependency') as mock:
+            yield mock
+
+    def test_basic_functionality(self, mock_deps):
+        # Arrange
+        instance = YourClass()
+
+        # Act
+        result = instance.method()
+
+        # Assert
+        assert result is not None
+```
+
+### Integration Test Template
+```python
+import pytest
+from uuid import uuid4
+
+@pytest.fixture(scope="module")
+def pipeline():
+    try:
+        pipe = EmbeddingPipeline.load()
+        yield pipe
+    except Exception as e:
+        pytest.skip(f"Services unavailable: {e}")
+
+class TestYourIntegration:
+    def test_workflow(self, pipeline):
+        entity_id = f"test:feature_{uuid4().hex[:8]}"
+
+        try:
+            # Test logic
+            pass
+        finally:
+            # Cleanup
+            pipeline.vector_store.delete_entity_chunks(entity_id)
+```
+
+---
+
+## Test Summary
+
+| Category | File | Speed | Services | Purpose |
+|----------|------|-------|----------|---------|
+| Unit | `test_embedding_pipeline.py` | Fast | None | Component testing |
+| Unit | `test_tools.py` | Fast | Mocked | Tool logic |
+| Integration | `test_rag_architecture.py` | Slow | All 3 | Full workflow |
+| Integration | `test_search_embeddings.py` | Medium | Qdrant | Search quality |
+| Integration | `test_mcp_integration.py` | Fast | Neo4j | MCP protocol |
+
+**Quick Commands**:
+```bash
+# Fast (unit tests only)
+pytest test/python/test_embedding_pipeline.py test/python/test_tools.py -v
+
+# Full suite
+pytest test/python/ -v --cov=src/python
+
+# Integration only
+pytest test/python/test_rag_architecture.py test/python/test_search_embeddings.py -v -s
+```
+
+---
 # Generate coverage report
 docker compose run --rm pytest pytest /app/test/python/ -v \
   --cov=/app/src/python \
