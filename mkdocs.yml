@@ -87,7 +87,6 @@ nav:
   - RAG System:
     - Architecture: rag/rag-architecture.md
     - Embedding Pipeline: rag/embedding-pipeline.md
-    - Migration Guide: rag/embedding-migration.md
   - MCP Reference:
     - Tools: mcp/tools.md
     - Resources: mcp/resources.md

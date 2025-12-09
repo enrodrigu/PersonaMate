@@ -2,16 +2,16 @@
 
 ## Overview
 
-Le pipeline d'embedding de PersonaMate génère deux types d'embeddings pour chaque entité:
+PersonaMate's embedding pipeline generates two types of embeddings for each entity:
 
-1. **Global Embedding**: Représente l'entité entière (résumé complet)
-2. **Attribute Embeddings**: Un embedding par attribut ou groupe d'attributs
+1. **Global Embedding**: Represents the entire entity (complete summary)
+2. **Attribute Embeddings**: One embedding per attribute or attribute group
 
-Cette approche permet:
-- ✅ Recherche sémantique globale (trouver des entités similaires)
-- ✅ Recherche fine-grained (trouver des compétences, localisations spécifiques)
-- ✅ Meilleure précision que les embeddings uniques
-- ✅ Flexibilité dans les requêtes
+This approach enables:
+- ✅ Global semantic search (find similar entities)
+- ✅ Fine-grained search (find specific skills, locations)
+- ✅ Better accuracy than single embeddings
+- ✅ Query flexibility
 
 ## Architecture
 
@@ -37,23 +37,23 @@ graph TD
 
 ### 1. ChunkGenerator (`utils/chunk_generator.py`)
 
-Génère les chunks de texte à partir des documents:
+Generates text chunks from documents:
 
 ```python
 from utils.chunk_generator import ChunkGenerator
 
-# Générer tous les chunks pour une entité
+# Generate all chunks for an entity
 chunks = ChunkGenerator.generate_all_chunks(
     entity_id="person:alice",
     doc_id="doc_123",
     document=mongo_document,
     include_global=True,
     include_attributes=True,
-    group_attributes=True  # Grouper les attributs liés
+    group_attributes=True  # Group related attributes
 )
 ```
 
-**Groupes d'attributs par défaut:**
+**Default attribute groups:**
 - `identity`: name, title, role
 - `skills`: skills, expertise, technologies
 - `experience`: experience, positions, years_experience
@@ -65,14 +65,14 @@ chunks = ChunkGenerator.generate_all_chunks(
 
 ### 2. VectorStore (`utils/vector_store.py`)
 
-Gère les embeddings dans Qdrant avec support des chunks:
+Manages embeddings in Qdrant with chunk support:
 
 ```python
 from utils.vector_store import VectorStore
 
 vector = VectorStore.load()
 
-# Ajouter un chunk
+# Add a chunk
 vector.add_chunk_vector(
     chunk_id="chunk_uuid",
     entity_id="person:alice",
@@ -83,38 +83,38 @@ vector.add_chunk_vector(
     metadata={"source": "structured_data"}
 )
 
-# Recherche par type de chunk
+# Search by chunk type
 results = vector.search_chunks(
     query="machine learning expert",
-    chunk_type="attribute",  # Chercher uniquement dans les attributs
-    attribute_name="skills",  # Chercher uniquement dans les skills
+    chunk_type="attribute",  # Search only in attributes
+    attribute_name="skills",  # Search only in skills
     limit=5
 )
 ```
 
 ### 3. MongoStore (`utils/mongo_store.py`)
 
-Structure de document étendue avec support `structured`:
+Extended document structure with `structured` support:
 
 ```python
 from utils.mongo_store import MongoStore
 
 mongo = MongoStore.load()
 
-# Créer un document avec données structurées
+# Create a document with structured data
 mongo.create_document(
     entity_id="person:alice",
     entity_type="Person",
     entity_name="Alice Johnson",
-    structured={  # NOUVEAU: Attributs structurés pour chunking
+    structured={  # NEW: Structured attributes for chunking
         "name": "Alice Johnson",
         "title": "Data Scientist",
         "skills": ["Python", "ML", "TensorFlow"],
         "location": "San Francisco",
         "experience": "10 years"
     },
-    text="Full text description...",  # NOUVEAU: Texte global optionnel
-    content={  # Contenu non structuré (legacy)
+    text="Full text description...",  # NEW: Optional global text
+    content={  # Unstructured content (legacy)
         "biography": "...",
         "notes": "..."
     }
@@ -123,14 +123,14 @@ mongo.create_document(
 
 ### 4. EmbeddingPipeline (`utils/embedding_pipeline.py`)
 
-Orchestrateur principal:
+Main orchestrator:
 
 ```python
 from utils.embedding_pipeline import EmbeddingPipeline
 
 pipeline = EmbeddingPipeline.load(use_llm_summaries=True)
 
-# Ajouter une nouvelle entité avec embeddings automatiques
+# Add a new entity with automatic embeddings
 entity_id = pipeline.add_new_entity(
     entity_type="Person",
     entity_name="Alice Johnson",
@@ -143,7 +143,7 @@ entity_id = pipeline.add_new_entity(
     relationships=[("company:acme", "WORKS_AT")]
 )
 
-# Recherche sémantique
+# Semantic search
 results = pipeline.search_similar_entities(
     query="machine learning expert in San Francisco",
     limit=5
@@ -155,17 +155,17 @@ results = pipeline.search_similar_entities(
 ### Installation
 
 ```bash
-# Installer les dépendances
+# Install dependencies
 pip install langchain langchain-openai openai sentence-transformers
 
-# Variables d'environnement pour LLM
+# Environment variables for LLM
 export OPENAI_API_KEY="your-api-key"
 
-# Démarrer les services
+# Start services
 docker compose up -d mongodb neo4j qdrant
 ```
 
-### Exemple 1: Ajouter une entité
+### Example 1: Add an Entity
 
 ```python
 from utils.embedding_pipeline import EmbeddingPipeline
@@ -192,10 +192,10 @@ entity_id = pipeline.add_new_entity(
 print(f"Created entity: {entity_id}")
 ```
 
-### Exemple 2: Recherche sémantique
+### Example 2: Semantic Search
 
 ```python
-# Recherche globale
+# Global search
 results = pipeline.search_similar_entities(
     query="kubernetes expert",
     limit=5
@@ -206,17 +206,17 @@ for result in results:
     print(f"  Matched: {result['matched_attribute']}")
 ```
 
-### Exemple 3: Recherche par attribut
+### Example 3: Search by Attribute
 
 ```python
-# Recherche uniquement dans les compétences
+# Search only in skills
 from utils.vector_store import VectorStore
 
 vector = VectorStore.load()
 
 results = vector.search_chunks(
     query="machine learning deep learning",
-    attribute_name="skills",  # Seulement dans skills
+    attribute_name="skills",  # Only in skills
     limit=5
 )
 
@@ -226,14 +226,14 @@ for result in results:
     print(f"Score: {result['score']:.3f}")
 ```
 
-### Exemple 4: Mettre à jour et régénérer
+### Example 4: Update and Regenerate
 
 ```python
-# Mettre à jour une entité
+# Update an entity
 result = pipeline.update_entity_embeddings(
     entity_id="person:bob",
     updated_attributes={
-        "skills": ["Python", "Go", "Kubernetes", "Rust"],  # Ajout de Rust
+        "skills": ["Python", "Go", "Kubernetes", "Rust"],  # Added Rust
         "certifications": ["AWS Certified"]
     },
     regenerate_all=True
@@ -242,10 +242,10 @@ result = pipeline.update_entity_embeddings(
 print(f"Regenerated {result['chunk_count']} chunks")
 ```
 
-### Exemple 5: Traitement batch
+### Example 5: Batch Processing
 
 ```python
-# Régénérer tous les embeddings pour un type d'entité
+# Regenerate all embeddings for an entity type
 results = pipeline.process_batch(
     entity_type="Person",
     force_regenerate=True
@@ -254,15 +254,15 @@ results = pipeline.process_batch(
 print(f"Processed {len(results)} entities")
 ```
 
-## Résumés LLM (Optionnel)
+## LLM Summaries (Optional)
 
-Le pipeline peut utiliser LangChain + GPT-3.5/4 pour générer des résumés concis:
+The pipeline can use LangChain + GPT-3.5/4 to generate concise summaries:
 
 ```python
 pipeline = EmbeddingPipeline.load(use_llm_summaries=True)
 ```
 
-**Prompt utilisé:**
+**Prompt used:**
 ```
 Generate a concise summary (2-3 sentences, max 100 tokens) for this entity:
 
@@ -276,15 +276,15 @@ Attributes:
 Summary:
 ```
 
-**Coût estimé:**
+**Estimated cost:**
 - Input: ~100 tokens
 - Output: ~50 tokens
 - Total: ~150 tokens/entity
-- GPT-3.5: ~$0.00001 par entité
-- GPT-4: ~$0.0001 par entité
+- GPT-3.5: ~$0.00001 per entity
+- GPT-4: ~$0.0001 per entity
 
-**Sans LLM:**
-Le pipeline utilise un résumé basique concaténant les attributs structurés.
+**Without LLM:**
+The pipeline uses a basic summary concatenating structured attributes.
 
 ## Structure des Chunks
 
@@ -324,9 +324,9 @@ Le pipeline utilise un résumé basique concaténant les attributs structurés.
 }
 ```
 
-## Métadonnées Qdrant
+## Qdrant Metadata
 
-Chaque point dans Qdrant inclut:
+Each point in Qdrant includes:
 
 ```python
 {
@@ -334,35 +334,35 @@ Chaque point dans Qdrant inclut:
     "entity_id": "person:alice",
     "doc_id": "doc_123",
     "chunk_type": "global" | "attribute",
-    "attribute_name": "skills",  # Si attribute chunk
-    "text": "Texte original",
+    "attribute_name": "skills",  # If attribute chunk
+    "text": "Original text",
     "created_at": "2025-12-08T...",
-    # + metadata custom
+    # + custom metadata
 }
 ```
 
-## Filtres de Recherche
+## Search Filters
 
 ```python
-# Chercher seulement les chunks globaux
+# Search only global chunks
 results = vector.search_chunks(
     query="data scientist",
     chunk_type="global"
 )
 
-# Chercher dans une entité spécifique
+# Search in a specific entity
 results = vector.search_chunks(
     query="python",
     entity_id="person:alice"
 )
 
-# Chercher un attribut spécifique
+# Search a specific attribute
 results = vector.search_chunks(
     query="machine learning",
     attribute_name="skills"
 )
 
-# Combiner les filtres
+# Combine filters
 results = vector.search_chunks(
     query="kubernetes",
     entity_id="person:bob",
@@ -373,32 +373,32 @@ results = vector.search_chunks(
 
 ## Performance
 
-### Taille des Embeddings
+### Embedding Sizes
 
-| Type | Texte moyen | Tokens | Embedding |
+| Type | Average Text | Tokens | Embedding |
 |------|-------------|--------|-----------|
 | Global | 300-500 chars | 75-125 | 384-dim |
 | Attribute group | 50-150 chars | 15-40 | 384-dim |
 | Single attribute | 20-80 chars | 5-20 | 384-dim |
 
-### Temps de Traitement
+### Processing Time
 
-- **Génération chunk**: ~5ms
-- **LLM summary**: ~500ms (si activé)
-- **Embedding generation**: ~50ms par chunk
-- **Batch insert Qdrant**: ~100ms pour 10 chunks
-- **Total par entité**: ~1-2s avec LLM, ~0.5s sans
+- **Chunk generation**: ~5ms
+- **LLM summary**: ~500ms (if enabled)
+- **Embedding generation**: ~50ms per chunk
+- **Batch insert Qdrant**: ~100ms for 10 chunks
+- **Total per entity**: ~1-2s with LLM, ~0.5s without
 
-### Recommandations
+### Recommendations
 
-1. **Batch processing**: Traiter les entités par lots de 50-100
-2. **LLM summaries**: Activer uniquement pour entités complexes
-3. **Attribute grouping**: Garder activé pour réduire le nombre de chunks
-4. **Index Qdrant**: Utiliser HNSW avec m=16, ef_construct=100
+1. **Batch processing**: Process entities in batches of 50-100
+2. **LLM summaries**: Enable only for complex entities
+3. **Attribute grouping**: Keep enabled to reduce chunk count
+4. **Qdrant index**: Use HNSW with m=16, ef_construct=100
 
-## Scripts Utiles
+## Useful Scripts
 
-### Régénérer tous les embeddings
+### Regenerate All Embeddings
 
 ```bash
 python -c "
@@ -410,7 +410,7 @@ pipeline.close()
 "
 ```
 
-### Vérifier les chunks d'une entité
+### Check Entity Chunks
 
 ```bash
 python -c "
@@ -424,20 +424,20 @@ pipeline.close()
 "
 ```
 
-### Lancer la démo complète
+### Run Complete Demo
 
 ```bash
-# Tous les exemples interactifs
+# All interactive examples
 python examples/embedding_pipeline_demo.py
 
-# Un exemple spécifique
+# A specific example
 python examples/embedding_pipeline_demo.py 1  # Example 1
 python examples/embedding_pipeline_demo.py 3  # Example 3
 ```
 
 ## Troubleshooting
 
-### LangChain non disponible
+### LangChain Not Available
 
 ```
 Warning: LangChain not installed. Summary generation will be basic.
@@ -445,7 +445,7 @@ Warning: LangChain not installed. Summary generation will be basic.
 
 **Solution**: `pip install langchain langchain-openai`
 
-### OpenAI API Key manquant
+### OpenAI API Key Missing
 
 ```
 Warning: Could not initialize LLM: ...
@@ -453,7 +453,7 @@ Warning: Could not initialize LLM: ...
 
 **Solution**: `export OPENAI_API_KEY="your-key"`
 
-### Qdrant connection refusée
+### Qdrant Connection Refused
 
 ```
 ERROR: Connection refused to Qdrant
@@ -461,13 +461,13 @@ ERROR: Connection refused to Qdrant
 
 **Solution**: `docker compose up -d qdrant`
 
-### Pas de chunks générés
+### No Chunks Generated
 
-Vérifier que le document a le champ `structured`:
+Verify that the document has the `structured` field:
 
 ```python
 doc = mongo.get_document(entity_id)
-print(doc.get('structured'))  # Doit contenir des attributs
+print(doc.get('structured'))  # Must contain attributes
 ```
 
 ## API Reference
@@ -480,4 +480,4 @@ Voir les docstrings dans:
 
 ## Examples
 
-Voir `examples/embedding_pipeline_demo.py` pour 7 exemples complets.
+See `examples/embedding_pipeline_demo.py` for 7 complete examples.

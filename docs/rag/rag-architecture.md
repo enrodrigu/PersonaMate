@@ -4,7 +4,6 @@
 > This document describes the original RAGManager architecture which has been **deprecated**.
 > For the current chunk-based embedding system, see:
 > - [Embedding Pipeline Documentation](embedding-pipeline.md) - Current architecture
-> - [Migration Guide](embedding-migration.md) - How to migrate from RAGManager
 
 ---
 
